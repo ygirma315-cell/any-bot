@@ -137,13 +137,13 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
         <div>
           <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200 mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Payment Notification Submitted
+            <Sparkles className="w-3.5 h-3.5" /> Order Submitted & Processing
           </div>
           <h2 className="heading-font text-xl font-extrabold text-slate-900">
             Order Submitted!
           </h2>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
-            Our admin team is verifying your payment. Your product credentials will be dispatched to <span className="font-bold text-[#FF6B00]">{userEmail}</span> upon verification.
+          <p className="text-xs text-slate-600 max-w-xs mx-auto mt-1 leading-relaxed">
+            Congrats! You can check your <strong className="text-slate-900 font-bold underline">{userEmail}</strong> email. We've sent your subscription. Have a nice time!
           </p>
         </div>
 
@@ -194,6 +194,17 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           >
             Back to Store
           </button>
+        </div>
+
+        <div className="pt-2 text-center">
+          <a
+            href="https://t.me/AnyAi_Support"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#FF6B00] transition-colors underline"
+          >
+            <span>If any problem with your order, Contact Us</span>
+          </a>
         </div>
       </div>
     );

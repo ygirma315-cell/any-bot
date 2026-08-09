@@ -159,13 +159,25 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
               )}
 
               {isAccepted && (
-                <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/60 text-xs text-emerald-900 space-y-1">
-                  <p className="font-bold flex items-center gap-1">
-                    🎉 Payment Accepted & Service Delivered!
+                <div className="p-3.5 bg-emerald-50/90 rounded-2xl border border-emerald-200/80 text-xs text-emerald-950 space-y-2">
+                  <p className="font-extrabold text-emerald-900 flex items-center gap-1.5 text-xs">
+                    <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>🎉 Congrats!</span>
                   </p>
-                  <p className="text-[11px] text-emerald-800 leading-snug">
-                    Admin has approved your payment! Product details & access link have been dispatched to your Telegram chat/email. Thank you for buying from AnyAi STORE!
+                  <p className="text-[11.5px] text-emerald-900 font-medium leading-relaxed">
+                    Congrats! You can check your <strong className="text-emerald-950 font-bold underline">{order.telegramUser.username || 'email'}</strong> email. We've sent your subscription. Have a nice time!
                   </p>
+                  <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
+                    <span className="text-[10px] text-emerald-700 font-medium">Delivered to registered email</span>
+                    <a
+                      href="https://t.me/AnyAi_Support"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-[#FF6B00] transition-colors underline"
+                    >
+                      <span>If any problem, Contact Us</span>
+                    </a>
+                  </div>
                 </div>
               )}
 
