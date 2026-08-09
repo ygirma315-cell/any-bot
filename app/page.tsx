@@ -32,6 +32,8 @@ export default function Home() {
       }
       return [...prevCart, { product, quantity: 1 }];
     });
+    // Auto-navigate user directly to Order page on Add!
+    setActiveTab('order');
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
