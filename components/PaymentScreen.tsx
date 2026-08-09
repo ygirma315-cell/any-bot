@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import confetti from 'canvas-confetti';
 import { PAYMENT_METHODS, PaymentMethod } from '@/config/payments';
 import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
-import { Copy, Check, ChevronRight, ShieldCheck, CheckCircle2, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { Copy, Check, ShieldCheck, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 
 interface PaymentScreenProps {
   cart: { product: Product; quantity: number }[];
@@ -72,7 +73,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       const data = await res.json();
 
       if (data.success) {
-        // Trigger celebration confetti
         try {
           confetti({
             particleCount: 80,
@@ -80,7 +80,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
             origin: { y: 0.6 }
           });
         } catch {
-          // ignore confetti if unsupported
+          // ignore confetti fallback
         }
 
         setSubmittedOrder({
@@ -99,7 +99,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     }
   };
 
-  // If order was successfully submitted, show final confirmation screen
   if (submittedOrder) {
     return (
       <div className="px-4 py-8 space-y-6 text-center animate-fadeIn pb-12">
@@ -119,7 +118,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           </p>
         </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-slate-200/80 text-left space-y-2 text-xs shadow-xs">
+        <div className="p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 text-left space-y-2 text-xs shadow-xs">
           <div className="flex justify-between text-slate-600">
             <span>Order Number:</span>
             <span className="font-mono font-bold text-slate-900">{submittedOrder.orderId}</span>
@@ -158,7 +157,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         <p className="text-xs text-slate-500">Choose your preferred payment method below</p>
       </div>
 
-      {/* Payment Method Cards */}
       <div className="space-y-2.5">
         {PAYMENT_METHODS.map((method) => {
           const isSelected = selectedMethod?.id === method.id;
@@ -171,17 +169,20 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               }}
               className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
                 isSelected
-                  ? 'bg-white border-indigo-500 shadow-md ring-2 ring-indigo-500/10'
-                  : 'bg-white/90 border-slate-200/80 hover:border-slate-300 shadow-xs'
+                  ? 'bg-white/95 backdrop-blur-md border-indigo-500 shadow-md ring-2 ring-indigo-500/10'
+                  : 'bg-white/80 backdrop-blur-md border-slate-200/80 hover:border-slate-300 shadow-xs'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-xs"
-                    style={{ background: method.color }}
-                  >
-                    {method.logo}
+                  <div className="w-10 h-10 relative rounded-xl overflow-hidden p-1.5 border border-slate-100 bg-white shadow-xs flex items-center justify-center shrink-0">
+                    <Image
+                      src={method.logoPath}
+                      alt={method.name}
+                      width={36}
+                      height={36}
+                      className="object-contain w-full h-full"
+                    />
                   </div>
                   <div>
                     <h3 className="heading-font text-xs font-bold text-slate-900 flex items-center gap-1.5">
@@ -203,10 +204,8 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 </div>
               </div>
 
-              {/* Expandable Payment Details */}
               {isSelected && (
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-3 animate-fadeIn">
-                  {/* Amount to Pay */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
                     <span className="text-xs font-medium text-slate-600">Amount to Transfer:</span>
                     <span className="heading-font text-base font-extrabold text-indigo-600">
@@ -214,7 +213,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     </span>
                   </div>
 
-                  {/* Account / Phone Number Box */}
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight block mb-1">
                       Send Payment To ({method.accountName}):
@@ -244,7 +242,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Step-by-step instructions */}
                   <div className="space-y-1 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
                     <p className="text-[11px] font-bold text-indigo-900 mb-1">Instructions:</p>
                     {method.instructions.map((step, idx) => (
@@ -255,7 +252,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     ))}
                   </div>
 
-                  {/* I've Paid Button */}
                   <button
                     type="button"
                     disabled={isSubmitting || cart.length === 0}

@@ -35,28 +35,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
       <div className={`card-flip-inner min-h-[290px] ${isFlipped ? 'is-flipped' : ''}`}>
         
         {/* ==================== FRONT FACE ==================== */}
-        <div className="card-face p-3.5 flex flex-col justify-between border border-slate-200/70 shadow-sm rounded-2xl relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div className="card-face p-3.5 flex flex-col justify-between border border-slate-200/80 shadow-sm rounded-2xl relative overflow-hidden group hover:shadow-md transition-all duration-300 bg-white/90 backdrop-blur-md">
           
           {/* Subtle Ambient Accent Glow Reflection */}
           <div
-            className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl pointer-events-none opacity-40 transition-opacity"
+            className="absolute top-0 right-0 w-28 h-28 rounded-full blur-2xl pointer-events-none opacity-50 transition-opacity"
             style={{ background: product.accentColor }}
           />
 
           <div>
             {/* Header: Category Badge & Logo */}
             <div className="flex items-start justify-between gap-1 mb-2.5">
-              <div className="w-11 h-11 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-slate-50 flex items-center justify-center p-1">
+              <div className="w-11 h-11 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
                 <Image
                   src={product.logoPath}
                   alt={product.name}
-                  width={40}
-                  height={40}
+                  width={38}
+                  height={38}
                   className="object-contain w-full h-full"
                 />
               </div>
 
-              <span className="text-[10px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-full border border-slate-200/50">
+              <span className="text-[10px] font-bold text-slate-600 bg-slate-100/90 px-2 py-0.5 rounded-full border border-slate-200/60">
                 {product.category}
               </span>
             </div>
@@ -97,7 +97,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <button
                 type="button"
                 onClick={handleFlip}
-                className="btn-pill text-[11px] py-1.5 px-2 bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 flex justify-center"
+                className="btn-pill text-[11px] py-1.5 px-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 flex justify-center"
               >
                 <Info className="w-3 h-3 text-slate-500" />
                 <span>Info</span>
@@ -127,7 +127,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         </div>
 
         {/* ==================== BACK FACE (INFO) ==================== */}
-        <div className="card-face card-face-back p-3.5 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white">
+        <div className="card-face card-face-back p-3.5 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md">
           <div>
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
               <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">

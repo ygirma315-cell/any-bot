@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 px-5 pt-4 pb-3 bg-white/80 backdrop-blur-md border-b border-slate-100/80 transition-all">
+    <header className="sticky top-0 z-30 px-5 pt-4 pb-3 bg-white/85 backdrop-blur-md border-b border-slate-200/60 shadow-xs transition-all">
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-2">
           <div className="relative w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-[1.5px] shadow-sm flex items-center justify-center">
@@ -31,7 +31,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200/60 shadow-xs">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 border border-slate-200/70 shadow-xs">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -43,11 +43,11 @@ export const Header: React.FC = () => {
       </div>
 
       {userData && (
-        <div className="flex items-center justify-between text-xs text-slate-600 mt-2 pt-2 border-t border-slate-100/60">
+        <div className="flex items-center justify-between text-xs text-slate-600 mt-2 pt-2 border-t border-slate-200/50">
           <span className="font-medium text-slate-700 flex items-center gap-1">
             👋 Welcome, <span className="font-semibold text-indigo-600">{userData.user.username ? `@${userData.user.username}` : userData.user.first_name}</span>
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md font-medium border border-emerald-200/50">
+          <span className="flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50/90 px-2 py-0.5 rounded-md font-semibold border border-emerald-200/60">
             <ShieldCheck className="w-3 h-3" /> Verified Shop
           </span>
         </div>

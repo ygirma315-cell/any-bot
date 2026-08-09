@@ -9,37 +9,40 @@ interface RgbAtmosphereProps {
 export const RgbAtmosphere: React.FC<RgbAtmosphereProps> = ({ activeTab = 'services' }) => {
   return (
     <div className="rgb-atmosphere-container">
-      {/* Light Source 1: Soft Cyan/Green */}
+      {/* Orb 1: Vibrant Soft Emerald & Cyan */}
       <div
         className="rgb-orb orb-1"
         style={{
-          opacity: activeTab === 'services' ? 0.9 : activeTab === 'order' ? 0.6 : 0.4
+          opacity: activeTab === 'services' ? 0.95 : 0.7
         }}
       />
 
-      {/* Light Source 2: Soft Violet/Indigo */}
+      {/* Orb 2: Vibrant Soft Violet & Indigo */}
       <div
         className="rgb-orb orb-2"
         style={{
-          opacity: activeTab === 'order' ? 0.95 : activeTab === 'payment' ? 0.7 : 0.5
+          opacity: activeTab === 'order' ? 0.95 : 0.75
         }}
       />
 
-      {/* Light Source 3: Soft Pink/Rose */}
+      {/* Orb 3: Vibrant Soft Rose & Magenta */}
       <div
         className="rgb-orb orb-3"
         style={{
-          opacity: activeTab === 'payment' ? 0.95 : activeTab === 'services' ? 0.6 : 0.7
+          opacity: activeTab === 'payment' ? 0.95 : 0.75
         }}
       />
 
-      {/* Light Source 4: Soft Amber/Gold */}
+      {/* Orb 4: Soft Amber & Sunburst */}
       <div
         className="rgb-orb orb-4"
         style={{
-          opacity: activeTab === 'payment' ? 0.8 : 0.5
+          opacity: activeTab === 'payment' ? 0.85 : 0.65
         }}
       />
+
+      {/* Center Flowing Ambient Beam */}
+      <div className="rgb-orb orb-center" />
     </div>
   );
 };

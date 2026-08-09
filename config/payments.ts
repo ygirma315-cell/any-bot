@@ -3,12 +3,11 @@ export interface PaymentMethod {
   name: string;
   subtitle: string;
   badge: string;
-  logo: string;
+  logoPath: string;
   color: string;
   accountId: string;
   accountName: string;
   network?: string;
-  qrPlaceholder?: string;
   instructions: string[];
 }
 
@@ -18,7 +17,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     name: 'Binance Pay / USDT',
     subtitle: 'Cryptocurrency (USDT TRC20 / Binance ID)',
     badge: 'Instant & Global',
-    logo: '⚡',
+    logoPath: '/assets/payments/binance.svg',
     color: 'rgba(240, 185, 11, 0.25)',
     accountId: '294810573 (Binance Pay ID) / TTxY9z...USDT_TRC20',
     accountName: 'AI Store Merchant',
@@ -35,7 +34,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     name: 'Telebirr',
     subtitle: 'Mobile payment service',
     badge: 'Popular',
-    logo: '📱',
+    logoPath: '/assets/payments/telebirr.svg',
     color: 'rgba(0, 168, 232, 0.25)',
     accountId: '0911223344',
     accountName: 'AI Store Telebirr Business',
@@ -52,7 +51,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     name: 'CBE Bank',
     subtitle: 'Commercial Bank of Ethiopia transfer',
     badge: 'Bank Direct',
-    logo: '🏦',
+    logoPath: '/assets/payments/cbe.svg',
     color: 'rgba(147, 51, 234, 0.25)',
     accountId: '1000492817263',
     accountName: 'AI Store Digital Services',
@@ -68,7 +67,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     name: 'Bank Transfer',
     subtitle: 'Other Bank & International Wire',
     badge: 'Standard',
-    logo: '💳',
+    logoPath: '/assets/payments/bank.svg',
     color: 'rgba(16, 185, 129, 0.25)',
     accountId: 'IBAN / Swift: ET09COMM1000492817263',
     accountName: 'AI Store Global Ltd',
