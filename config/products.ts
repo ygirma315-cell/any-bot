@@ -28,7 +28,7 @@ export const PRODUCTS: Product[] = [
     available: true,
     stock: 14,
     category: 'AI Service',
-    logoPath: '/assets/products/chatgpt.svg',
+    logoPath: '/assets/products/chatgpt.png',
     accentColor: 'rgba(16, 163, 127, 0.4)',
     features: [
       'Account/service delivery after payment',
@@ -49,7 +49,7 @@ export const PRODUCTS: Product[] = [
     available: true,
     stock: 9,
     category: 'AI Service',
-    logoPath: '/assets/products/gemini.svg',
+    logoPath: '/assets/products/gemini.jpg',
     accentColor: 'rgba(74, 144, 226, 0.4)',
     features: [
       'Instant invite/login credentials',
@@ -70,7 +70,7 @@ export const PRODUCTS: Product[] = [
     available: true,
     stock: 11,
     category: 'AI Service',
-    logoPath: '/assets/products/claude.svg',
+    logoPath: '/assets/products/claude.png',
     accentColor: 'rgba(217, 119, 6, 0.4)',
     features: [
       'Premium private/shared account option',
