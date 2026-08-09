@@ -55,12 +55,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
                   className="object-contain w-full h-full"
                 />
               </div>
-
-              {cartQuantity > 0 && (
-                <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/60">
-                  {cartQuantity} in cart
-                </span>
-              )}
             </div>
 
             {/* Product Title & Description */}
