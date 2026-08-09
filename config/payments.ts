@@ -19,7 +19,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     badge: 'Instant & Global',
     logoPath: '/assets/payments/binance.png',
     color: 'rgba(240, 185, 11, 0.25)',
-    accountId: '294810573 (Binance Pay ID)',
+    accountId: '891029481',
     accountName: 'AI Store Merchant',
     network: 'Binance Pay',
     instructions: [
@@ -36,12 +36,12 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     badge: 'BEP20 / TRC20',
     logoPath: '/assets/payments/usdt.png',
     color: 'rgba(38, 161, 123, 0.25)',
-    accountId: '0x71C765...USDT (BEP20) / TTxY9z...USDT (TRC20)',
+    accountId: '0x71C76543219876543210BEP20',
     accountName: 'AI Store Crypto Wallet',
     network: 'USDT (BEP20 / TRC20)',
     instructions: [
       'Open your Trust Wallet, Metamask, or Crypto Exchange.',
-      'Send exact USDT total to the BEP20 or TRC20 address below.',
+      'Send exact USDT total to the BEP20 address below.',
       'Double check network selection before sending.',
       'Tap "I\'ve Paid" below after broadcasting transaction.'
     ]
@@ -75,7 +75,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     instructions: [
       'Open CBE Birr, CBE Mobile Banking app, or visit ATM.',
       'Transfer to Account Number listed below.',
-      'Make sure the recipient name displays "AI Store Digital Services".',
+      'Make sure recipient name displays "AI Store Digital Services".',
       'Press "I\'ve Paid" to send your order for instant processing.'
     ]
   },
@@ -86,7 +86,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     badge: 'Standard',
     logoPath: '/assets/payments/bank.svg',
     color: 'rgba(16, 185, 129, 0.25)',
-    accountId: 'IBAN / Swift: ET09COMM1000492817263',
+    accountId: 'ET09COMM1000492817263',
     accountName: 'AI Store Global Ltd',
     instructions: [
       'Use online banking or bank app to initiate transfer.',
