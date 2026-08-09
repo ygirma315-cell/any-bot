@@ -352,9 +352,9 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-xs rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all"
+              className="flex-1 py-3 bg-[#FF6B00] hover:bg-[#E66000] text-white font-bold text-xs rounded-xl shadow-xs hover:shadow-md flex items-center justify-center gap-1.5 transition-all"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-4 h-4 stroke-[2.5]" />
               <span>Save Product</span>
             </button>
           </div>

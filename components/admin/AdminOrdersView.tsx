@@ -215,9 +215,9 @@ export const AdminOrdersView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleAcceptOrder(order)}
-                      className="flex-1 py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-xl text-xs font-black shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-95"
+                      className="flex-1 py-3 px-4 bg-[#FF6B00] hover:bg-[#E66000] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2"
                     >
-                      <CheckCircle2 className="w-4 h-4 stroke-[3]" />
+                      <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                       <span>Accept Payment & Release Product</span>
                     </button>
                   </div>
