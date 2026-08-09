@@ -68,7 +68,7 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
     name: 'CBE Bank',
     subtitle: 'Commercial Bank of Ethiopia transfer',
     badge: 'Bank Direct',
-    logoPath: '/assets/payments/cbe.svg',
+    logoPath: '/assets/payments/cbe.jpg',
     color: 'rgba(147, 51, 234, 0.25)',
     accountId: '1000492817263',
     accountName: 'AI Store Digital Services',
