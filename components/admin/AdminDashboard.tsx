@@ -6,7 +6,7 @@ import { Product } from '@/config/products';
 import { getStoredProducts, saveStoredProducts, getStoredCategories, saveStoredCategories, getStoredOrders } from '@/lib/store';
 import { ProductEditorModal } from './ProductEditorModal';
 import { AdminOrdersView } from './AdminOrdersView';
-import { Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, Tag, ExternalLink, Sparkles, FolderPlus } from 'lucide-react';
+import { Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, Tag, ExternalLink, Sparkles, FolderPlus, Layers, Store } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -64,7 +64,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
     saveStoredProducts(updatedProducts);
 
-    // Also check if product has a category not in list
     if (updatedProduct.category && !categories.includes(updatedProduct.category)) {
       const updatedCategories = [...categories, updatedProduct.category];
       saveStoredCategories(updatedCategories);
@@ -93,11 +92,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto">
       {/* Top Header Bar */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-xl">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-5 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12 rounded-2xl bg-white p-1 border border-slate-700 shadow-md flex items-center justify-center shrink-0">
+          <div className="relative w-12 h-12 rounded-2xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
             <Image
               src="/assets/buy_ai_store_logo.png"
               alt="AnyAi Store Logo"
@@ -107,34 +106,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             />
           </div>
           <div>
-            <h1 className="heading-font text-lg font-black tracking-tight text-white flex items-center gap-2">
+            <h1 className="heading-font text-lg font-black tracking-tight text-slate-900 flex items-center gap-2">
               AnyAi STORE ADMIN
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                v2.0 Live
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                Orange Theme
               </span>
             </h1>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 font-medium">
               Manage AI Categories, Products, Prices & Order Approval
             </p>
           </div>
         </div>
 
-        {/* Header Stats & Quick Actions */}
+        {/* Header Actions */}
         <div className="flex items-center gap-3">
           <a
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+            className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <span>View Main Site</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
           </a>
 
           <button
             type="button"
             onClick={onLogout}
-            className="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5"
+            className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Logout</span>
@@ -143,40 +142,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       </header>
 
       {/* Metrics Summary Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">Total Products</span>
-          <p className="heading-font text-2xl font-black text-white">{products.length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+        <div className="p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide">Total Products</span>
+          <p className="heading-font text-2xl font-black text-slate-900">{products.length}</p>
         </div>
 
-        <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">Categories</span>
-          <p className="heading-font text-2xl font-black text-indigo-400">{categories.length}</p>
+        <div className="p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide">Categories</span>
+          <p className="heading-font text-2xl font-black text-orange-600">{categories.length}</p>
         </div>
 
-        <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">Pending Orders</span>
-          <p className="heading-font text-2xl font-black text-amber-400 flex items-center gap-2">
+        <div className="p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide">Pending Orders</span>
+          <p className="heading-font text-2xl font-black text-amber-600 flex items-center gap-2">
             {pendingOrdersCount}
-            {pendingOrdersCount > 0 && <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />}
+            {pendingOrdersCount > 0 && <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />}
           </p>
         </div>
 
-        <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">Total Orders</span>
-          <p className="heading-font text-2xl font-black text-emerald-400">{ordersCount}</p>
+        <div className="p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wide">Total Orders</span>
+          <p className="heading-font text-2xl font-black text-emerald-600">{ordersCount}</p>
         </div>
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
         <button
           type="button"
           onClick={() => setActiveTab('products')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 border ${
             activeTab === 'products'
-              ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 shadow-md shadow-orange-500/20'
+              : 'bg-white text-slate-600 border-slate-200 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <Package className="w-4 h-4" />
@@ -186,10 +185,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         <button
           type="button"
           onClick={() => setActiveTab('orders')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border relative ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 border relative ${
             activeTab === 'orders'
-              ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 shadow-md shadow-orange-500/20'
+              : 'bg-white text-slate-600 border-slate-200 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <ShoppingBag className="w-4 h-4" />
@@ -204,21 +203,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       {/* TAB 1: PRODUCTS & CATEGORIES MANAGEMENT */}
       {activeTab === 'products' && (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-6 animate-fadeIn pb-12">
           {/* Action Bar & Add Category */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-slate-900/80 rounded-2xl border border-slate-800">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs">
             <div>
-              <h2 className="heading-font text-base font-bold text-white">Product Catalog & Category Controls</h2>
-              <p className="text-xs text-slate-400">Add or edit products, warranty status (Green vs Red logo), and prices.</p>
+              <h2 className="heading-font text-base font-extrabold text-slate-900">Product Catalog & Category Controls</h2>
+              <p className="text-xs text-slate-500 font-medium">Edit categories, title limits, price, and warranty badges (Green vs Red logo).</p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setShowAddCategory(!showAddCategory)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all flex items-center gap-1.5"
               >
-                <FolderPlus className="w-4 h-4 text-indigo-400" />
+                <FolderPlus className="w-4 h-4 text-orange-600" />
                 <span>+ Category</span>
               </button>
 
@@ -228,9 +227,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   setEditingProduct(null);
                   setIsEditorOpen(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow-lg transition-all flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs font-black shadow-md shadow-orange-500/20 transition-all flex items-center gap-2 transform active:scale-95"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Add Product</span>
               </button>
             </div>
@@ -238,18 +237,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {/* Add Category Drawer */}
           {showAddCategory && (
-            <div className="p-4 bg-slate-900 border border-indigo-500/40 rounded-2xl flex items-center gap-3 animate-fadeIn">
+            <div className="p-4 bg-white border border-orange-300 rounded-2xl flex items-center gap-3 shadow-md animate-fadeIn">
               <input
                 type="text"
                 value={newCategoryInput}
                 onChange={(e) => setNewCategoryInput(e.target.value)}
                 placeholder="Enter new category name (e.g. AI Coding, Video Tools)..."
-                className="flex-1 p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:border-orange-500 focus:bg-white"
               />
               <button
                 type="button"
                 onClick={handleAddCategory}
-                className="px-4 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-500"
+                className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow-xs"
               >
                 Save Category
               </button>
@@ -258,13 +257,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
           {/* Category List Tags */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-xs font-bold text-slate-400 shrink-0">Active Categories:</span>
+            <span className="text-xs font-bold text-slate-500 shrink-0">Active Categories:</span>
             {categories.map((cat) => (
               <span
                 key={cat}
-                className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold shrink-0 flex items-center gap-1"
+                className="px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold shrink-0 flex items-center gap-1 shadow-2xs"
               >
-                <Tag className="w-3 h-3 text-indigo-400" />
+                <Tag className="w-3 h-3 text-orange-500" />
                 <span>{cat}</span>
               </span>
             ))}
@@ -278,12 +277,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               return (
                 <div
                   key={prod.id}
-                  className="p-4 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 space-y-3 relative overflow-hidden flex flex-col justify-between hover:border-slate-700 transition-all shadow-md"
+                  className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 space-y-3 relative overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-orange-200 transition-all"
                 >
                   <div>
                     {/* Top Row: Category & Action Buttons */}
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10.5px] font-bold text-indigo-400 bg-indigo-950/60 px-2.5 py-0.5 rounded-md border border-indigo-800/50">
+                      <span className="text-[10.5px] font-extrabold text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-md border border-orange-200/80">
                         {prod.category}
                       </span>
 
@@ -294,7 +293,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             setEditingProduct(prod);
                             setIsEditorOpen(true);
                           }}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
                           title="Edit product"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -302,7 +301,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <button
                           type="button"
                           onClick={() => handleDeleteProduct(prod.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-400 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
                           title="Delete product"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -311,34 +310,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     </div>
 
                     {/* Product Name & Description */}
-                    <h3 className="heading-font text-sm font-extrabold text-white line-clamp-1 mb-1">
+                    <h3 className="heading-font text-sm font-extrabold text-slate-900 line-clamp-1 mb-1">
                       {prod.name}
                     </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-snug mb-3">
                       {prod.shortDescription}
                     </p>
                   </div>
 
                   {/* Bottom Row: Price, Stock & Warranty Badge */}
-                  <div className="pt-3 border-t border-slate-800 space-y-2.5 mt-auto">
+                  <div className="pt-3 border-t border-slate-100 space-y-2.5 mt-auto">
                     {/* Warranty Logo / Badge (Green for Warranty, Red for No Warranty) */}
                     {isWarrantyActive ? (
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-800/60">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <span className="truncate">{prod.warranty || 'Warranty Included'}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-rose-400 bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-800/60">
-                        <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                         <span className="truncate">No Warranty</span>
                       </div>
                     )}
 
                     <div className="flex items-center justify-between">
-                      <div className="text-sm font-black text-emerald-400">
+                      <div className="text-sm font-black text-emerald-600">
                         {prod.currency || '$'}{prod.price.toFixed(2)}
                       </div>
-                      <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
                         {prod.stock} in Stock
                       </span>
                     </div>

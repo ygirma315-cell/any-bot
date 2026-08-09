@@ -25,7 +25,7 @@ export const AdminOrdersView: React.FC = () => {
     updateOrderStatus(order.orderId, 'Accepted');
     const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
     
-    setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Product sent to ${userHandle} via email/Telegram (UI simulation).`);
+    setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Product credentials released to ${userHandle} via email/Telegram (UI simulation active).`);
     setTimeout(() => setToastMessage(null), 4500);
   };
 
@@ -46,20 +46,20 @@ export const AdminOrdersView: React.FC = () => {
   const pendingCount = orders.filter(o => o.status === 'Pending' || o.status === 'Payment Submitted').length;
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-12">
       {/* Top Banner & Filter Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/95 p-4 rounded-2xl border border-slate-200/90 shadow-sm">
         <div>
-          <h2 className="heading-font text-lg font-extrabold text-white flex items-center gap-2">
+          <h2 className="heading-font text-lg font-black text-slate-900 flex items-center gap-2">
             📦 Incoming Orders Management
             {pendingCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold animate-pulse">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-xs font-extrabold animate-pulse">
                 {pendingCount} Pending
               </span>
             )}
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Review payment proof, verify user Telegram IDs, and release product credentials
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Review payment proof, verify customer Telegram handles, and release digital credentials
           </p>
         </div>
 
@@ -70,10 +70,10 @@ export const AdminOrdersView: React.FC = () => {
               key={status}
               type="button"
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 ${
                 filterStatus === status
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20'
+                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
               {status}
@@ -83,7 +83,7 @@ export const AdminOrdersView: React.FC = () => {
           <button
             type="button"
             onClick={loadOrders}
-            className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 hover:text-white shrink-0"
+            className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 shrink-0"
             title="Refresh orders"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -93,8 +93,8 @@ export const AdminOrdersView: React.FC = () => {
 
       {/* Simulated Email Toast Alert */}
       {toastMessage && (
-        <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-lg animate-bounce">
-          <Sparkles className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-md animate-bounce">
+          <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -111,31 +111,31 @@ export const AdminOrdersView: React.FC = () => {
             return (
               <div
                 key={order.orderId}
-                className="p-5 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 space-y-4 shadow-md transition-all hover:border-slate-700"
+                className="p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 space-y-4 shadow-sm transition-all hover:shadow-md hover:border-orange-200"
               >
                 {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-extrabold text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+                    <span className="font-mono text-xs font-extrabold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                       {order.orderId}
                     </span>
-                    <span className="text-xs text-slate-400">{order.timestamp}</span>
+                    <span className="text-xs text-slate-500 font-medium">{order.timestamp}</span>
                   </div>
 
                   <div>
                     {isPending && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">
-                        <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" /> Pending Payment Review
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                        <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" /> Pending Payment Review
                       </span>
                     )}
                     {isAccepted && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Accepted & Product Sent
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Accepted & Product Sent
                       </span>
                     )}
                     {isRejected && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30">
-                        <XCircle className="w-3.5 h-3.5 text-rose-400" /> Rejected
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" /> Rejected
                       </span>
                     )}
                   </div>
@@ -144,40 +144,40 @@ export const AdminOrdersView: React.FC = () => {
                 {/* Customer Details Box & Pending Alert */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Customer Information Card */}
-                  <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700/80 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-400">Telegram Username:</span>
-                      <strong className="text-indigo-400 font-bold">{userHandle}</strong>
+                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Telegram Username:</span>
+                      <strong className="text-orange-600 font-extrabold">{userHandle}</strong>
                     </div>
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-400">Telegram User ID:</span>
-                      <code className="font-mono text-slate-200">{order.telegramUser.id}</code>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Telegram User ID:</span>
+                      <code className="font-mono text-slate-900 font-bold">{order.telegramUser.id}</code>
                     </div>
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-400">Payment Method:</span>
-                      <strong className="text-white">{order.paymentMethod.name}</strong>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span>Payment Method:</span>
+                      <strong className="text-slate-900 font-bold">{order.paymentMethod.name}</strong>
                     </div>
-                    <div className="flex items-center justify-between text-slate-300 pt-1 border-t border-slate-700">
-                      <span className="text-slate-400">Total Paid:</span>
-                      <span className="heading-font text-sm font-extrabold text-emerald-400">${order.total.toFixed(2)} USD</span>
+                    <div className="flex items-center justify-between text-slate-600 pt-1.5 border-t border-slate-200">
+                      <span className="font-bold text-slate-700">Total Paid:</span>
+                      <span className="heading-font text-sm font-extrabold text-emerald-600">${order.total.toFixed(2)} USD</span>
                     </div>
                   </div>
 
                   {/* Admin Action Notification Alert */}
-                  <div className="p-3.5 bg-indigo-950/40 rounded-xl border border-indigo-500/30 space-y-2 text-xs flex flex-col justify-between">
+                  <div className="p-3.5 bg-orange-50/70 rounded-xl border border-orange-200/80 space-y-2 text-xs flex flex-col justify-between">
                     <div className="space-y-1">
-                      <p className="font-bold text-indigo-300 flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span>Pending Payment Alert</span>
+                      <p className="font-bold text-orange-950 flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
+                        <span>Pending Payment Verification</span>
                       </p>
-                      <p className="text-[11.5px] text-slate-300 leading-snug">
-                        Telegram handle <strong className="text-white">{userHandle}</strong> (ID: {order.telegramUser.id}) has submitted payment for this order. Accept or reject below.
+                      <p className="text-[11.5px] text-slate-700 leading-snug">
+                        Telegram handle <strong className="text-slate-900">{userHandle}</strong> (ID: {order.telegramUser.id}) is waiting for payment confirmation. Accept or reject below.
                       </p>
                     </div>
 
                     {isAccepted && (
-                      <div className="pt-2 text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
-                        <Send className="w-3.5 h-3.5" />
+                      <div className="pt-2 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                        <Send className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Product sent via email / Telegram (UI Simulation Active)</span>
                       </div>
                     )}
@@ -186,15 +186,15 @@ export const AdminOrdersView: React.FC = () => {
 
                 {/* Ordered Items Table */}
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Ordered Services</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Ordered Services</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {order.items.map((item, idx) => (
-                      <div key={idx} className="p-2.5 bg-slate-800/60 rounded-xl border border-slate-700/60 flex items-center justify-between text-xs">
+                      <div key={idx} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
                         <div>
-                          <p className="font-bold text-white">{item.name} ×{item.quantity}</p>
-                          <p className="text-[10px] text-emerald-400 font-semibold">{item.warranty}</p>
+                          <p className="font-bold text-slate-900">{item.name} ×{item.quantity}</p>
+                          <p className="text-[10px] text-emerald-600 font-semibold">{item.warranty}</p>
                         </div>
-                        <span className="font-extrabold text-slate-200">${(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-extrabold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -202,23 +202,23 @@ export const AdminOrdersView: React.FC = () => {
 
                 {/* Accept / Reject Action Buttons */}
                 {isPending && (
-                  <div className="pt-3 border-t border-slate-800 flex items-center gap-3">
+                  <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => handleRejectOrder(order)}
-                      className="flex-1 py-3 px-4 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
                     >
-                      <XCircle className="w-4 h-4 text-rose-400" />
+                      <XCircle className="w-4 h-4 text-rose-600" />
                       <span>Reject Payment</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleAcceptOrder(order)}
-                      className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-xl text-xs font-black shadow-md shadow-orange-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-95"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Accept Payment & Send Product</span>
+                      <CheckCircle2 className="w-4 h-4 stroke-[3]" />
+                      <span>Accept Payment & Release Product</span>
                     </button>
                   </div>
                 )}
@@ -227,10 +227,10 @@ export const AdminOrdersView: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-slate-900/60 rounded-2xl border border-slate-800 p-6 space-y-2">
-          <Clock className="w-10 h-10 text-slate-600 mx-auto" />
-          <p className="text-sm font-semibold text-slate-300">No orders found for filter "{filterStatus}"</p>
-          <p className="text-xs text-slate-500">New customer orders will appear here as soon as they submit payment.</p>
+        <div className="text-center py-16 bg-white/80 rounded-2xl border border-slate-200 p-6 space-y-2">
+          <Clock className="w-10 h-10 text-slate-400 mx-auto" />
+          <p className="text-sm font-bold text-slate-700">No orders found for filter "{filterStatus}"</p>
+          <p className="text-xs text-slate-500">Customer orders will appear here in real time when submitted.</p>
         </div>
       )}
     </div>

@@ -97,7 +97,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       stock: Number(stock),
       category: finalCategory,
       logoPath: product?.logoPath || '/assets/products/chatgpt.png',
-      accentColor: product?.accentColor || 'rgba(99, 102, 241, 0.4)',
+      accentColor: product?.accentColor || 'rgba(249, 115, 22, 0.4)',
       features: features.filter((f) => f.trim().length > 0)
     };
 
@@ -105,17 +105,17 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 text-slate-100 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-lg p-6 text-slate-900 shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h2 className="heading-font text-lg font-bold text-white flex items-center gap-2">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 className="heading-font text-lg font-black text-slate-900 flex items-center gap-2">
             {product ? '✏️ Edit Product' : '➕ Add New Product'}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -124,13 +124,13 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Category Selector */}
           <div>
-            <label className="font-bold text-slate-300 block mb-1">
+            <label className="font-bold text-slate-700 block mb-1">
               Product Category <span className="text-rose-500">*</span>
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:outline-none focus:border-indigo-500"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20"
             >
               {categories.filter(c => c !== 'All').map((cat) => (
                 <option key={cat} value={cat}>
@@ -146,7 +146,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 placeholder="Enter new category name"
-                className="w-full mt-2 p-2.5 bg-slate-800 border border-indigo-500 rounded-xl text-white font-medium focus:outline-none"
+                className="w-full mt-2 p-2.5 bg-white border border-orange-500 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               />
             )}
           </div>
@@ -154,10 +154,10 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
           {/* Product Name (With Character Limit) */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-300">
+              <label className="font-bold text-slate-700">
                 Product Title / Name <span className="text-rose-500">*</span>
               </label>
-              <span className={`text-[10px] font-bold ${name.length >= MAX_NAME_LENGTH ? 'text-rose-400' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold ${name.length >= MAX_NAME_LENGTH ? 'text-rose-500' : 'text-slate-400'}`}>
                 {name.length}/{MAX_NAME_LENGTH} chars
               </span>
             </div>
@@ -167,14 +167,14 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. ChatGPT Plus 1-Month"
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-semibold focus:outline-none focus:border-indigo-500"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white focus:ring-2 focus:ring-orange-500/20"
             />
           </div>
 
           {/* Price & Stock Row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-slate-300 block mb-1">
+              <label className="font-bold text-slate-700 block mb-1">
                 Price ($ USD) <span className="text-rose-500">*</span>
               </label>
               <input
@@ -183,12 +183,12 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-semibold focus:outline-none focus:border-indigo-500"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
               />
             </div>
 
             <div>
-              <label className="font-bold text-slate-300 block mb-1">
+              <label className="font-bold text-slate-700 block mb-1">
                 Stock Quantity
               </label>
               <input
@@ -196,7 +196,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                 min="0"
                 value={stock}
                 onChange={(e) => setStock(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-semibold focus:outline-none focus:border-indigo-500"
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
               />
             </div>
           </div>
@@ -204,10 +204,10 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
           {/* Short Description (With Limit) */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-300">
+              <label className="font-bold text-slate-700">
                 Short Description (Card Subtitle)
               </label>
-              <span className={`text-[10px] font-bold ${shortDescription.length >= MAX_SHORT_DESC_LENGTH ? 'text-rose-400' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold ${shortDescription.length >= MAX_SHORT_DESC_LENGTH ? 'text-rose-500' : 'text-slate-400'}`}>
                 {shortDescription.length}/{MAX_SHORT_DESC_LENGTH} chars
               </span>
             </div>
@@ -217,17 +217,17 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
               placeholder="e.g. GPT-4o, DALL·E 3, Canvas & Voice Mode"
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-orange-500 focus:bg-white"
             />
           </div>
 
           {/* Full Description (With Limit) */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-300">
+              <label className="font-bold text-slate-700">
                 Full Info / Details (Flipped Card View)
               </label>
-              <span className={`text-[10px] font-bold ${fullDescription.length >= MAX_FULL_DESC_LENGTH ? 'text-rose-400' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold ${fullDescription.length >= MAX_FULL_DESC_LENGTH ? 'text-rose-500' : 'text-slate-400'}`}>
                 {fullDescription.length}/{MAX_FULL_DESC_LENGTH} chars
               </span>
             </div>
@@ -237,13 +237,13 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
               value={fullDescription}
               onChange={(e) => setFullDescription(e.target.value)}
               placeholder="Provide full description for customer..."
-              className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-indigo-500 custom-scrollbar"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-orange-500 focus:bg-white custom-scrollbar"
             />
           </div>
 
           {/* Warranty Configuration Section */}
-          <div className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-3">
-            <label className="font-extrabold text-white block uppercase tracking-wide">
+          <div className="p-3.5 bg-orange-50/50 rounded-2xl border border-orange-200/80 space-y-3">
+            <label className="font-extrabold text-orange-950 block uppercase tracking-wide">
               🛡️ Warranty Configuration
             </label>
 
@@ -252,36 +252,36 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsWarranty(true)}
-                className={`p-3 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`p-3 rounded-xl border font-extrabold flex items-center justify-center gap-2 transition-all ${
                   isWarranty
-                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-md'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
+                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <ShieldCheck className="w-4 h-4" />
                 <span>Warranty</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsWarranty(false)}
-                className={`p-3 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`p-3 rounded-xl border font-extrabold flex items-center justify-center gap-2 transition-all ${
                   !isWarranty
-                    ? 'bg-rose-500/20 border-rose-500 text-rose-400 shadow-md'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                    ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
+                    : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
+                <ShieldAlert className="w-4 h-4" />
                 <span>No Warranty</span>
               </button>
             </div>
 
             {/* If Warranty is chosen, render duration inputs */}
             {isWarranty ? (
-              <div className="space-y-2 pt-2 border-t border-slate-700 animate-fadeIn">
+              <div className="space-y-2 pt-2 border-t border-orange-200/60 animate-fadeIn">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
                       Warranty Display Text
                     </label>
                     <input
@@ -289,11 +289,11 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                       value={warrantyText}
                       onChange={(e) => setWarrantyText(e.target.value)}
                       placeholder="e.g. 30 Days Warranty"
-                      className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
                       Duration Days
                     </label>
                     <input
@@ -301,19 +301,19 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                       min="1"
                       value={warrantyDays}
                       onChange={(e) => setWarrantyDays(Number(e.target.value))}
-                      className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs"
+                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold"
                     />
                   </div>
                 </div>
                 {/* Live Logo Badge Preview */}
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-900/30 border border-emerald-500/40 text-emerald-300 text-[11px]">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Preview Badge: <strong>{warrantyText || `${warrantyDays} Days Warranty`}</strong> (Green Logo)</span>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-900/30 border border-rose-500/40 text-rose-300 text-[11px] animate-fadeIn">
-                <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px] animate-fadeIn">
+                <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>Preview Badge: <strong>No Warranty</strong> (Red Logo)</span>
               </div>
             )}
@@ -322,14 +322,14 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
           {/* Features / Service Rules (Max 4 items) */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="font-bold text-slate-300">
+              <label className="font-bold text-slate-700">
                 Service Rules / Features (Max 4 items)
               </label>
               {features.length < 4 && (
                 <button
                   type="button"
                   onClick={handleAddFeature}
-                  className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  className="text-[11px] font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Rule
                 </button>
@@ -344,12 +344,12 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                   value={feat}
                   onChange={(e) => handleUpdateFeature(idx, e.target.value)}
                   placeholder={`Rule #${idx + 1}`}
-                  className="flex-1 p-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs"
+                  className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveFeature(idx)}
-                  className="p-2 text-slate-400 hover:text-rose-400 transition-colors"
+                  className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -358,19 +358,19 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
           </div>
 
           {/* Submit Action Buttons */}
-          <div className="pt-4 border-t border-slate-800 flex items-center gap-3">
+          <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl"
+              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5"
+              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-xs rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-1.5 transition-all"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4 stroke-[3]" />
               <span>Save Product</span>
             </button>
           </div>
