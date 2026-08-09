@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="notion-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#notion-bg)"/>
+  <path d="M30 25 L40 25 L65 60 L65 25 L75 25 L75 75 L65 75 L40 40 L40 75 L30 75 Z" fill="#ffffff"/>
+</svg>
