@@ -93,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <button
                 type="button"
                 onClick={handleFlip}
-                className="btn-pill text-[11px] py-1.5 px-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 flex justify-center"
+                className="py-1.5 px-2.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center justify-center gap-1 transition-all"
               >
                 <Info className="w-3 h-3 text-slate-500" />
                 <span>Info</span>
@@ -129,7 +129,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
                 Product Details
               </span>
-              <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
                 🛡 {product.warrantyDays} Days Warranty
               </span>
             </div>
@@ -152,12 +152,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
             </div>
           </div>
 
+          {/* High-Contrast Clean Back Button */}
           <button
             type="button"
             onClick={handleFlip}
-            className="btn-pill text-[11px] py-1.5 px-3 bg-slate-900 text-white border-none w-full justify-center mt-2 hover:bg-slate-800"
+            className="w-full py-2 px-3 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-200 flex items-center justify-center gap-1.5 transition-all shadow-xs mt-2"
           >
-            <ArrowLeft className="w-3 h-3" />
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
             <span>Back to Card</span>
           </button>
         </div>
