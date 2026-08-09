@@ -85,9 +85,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const MAX_CATEGORY_LENGTH = 22;
+
   const handleAddCategory = () => {
     if (!newCategoryInput.trim()) return;
-    const catName = newCategoryInput.trim();
+    const catName = newCategoryInput.trim().slice(0, MAX_CATEGORY_LENGTH);
     if (!categories.includes(catName)) {
       const updatedCats = [...categories, catName];
       saveStoredCategories(updatedCats);
@@ -98,9 +100,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const handleRenameCategory = (oldCategory: string) => {
     if (oldCategory === 'All') return;
-    const newName = prompt(`Rename category "${oldCategory}" to:`, oldCategory);
+    const newName = prompt(`Rename category "${oldCategory}" (Max 22 chars):`, oldCategory);
     if (!newName || !newName.trim() || newName.trim() === oldCategory) return;
-    const cleanNewName = newName.trim();
+    const cleanNewName = newName.trim().slice(0, MAX_CATEGORY_LENGTH);
 
     const updatedCats = categories.map(c => c === oldCategory ? cleanNewName : c);
     saveStoredCategories(updatedCats);
@@ -441,13 +443,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               {/* Add Category Drawer Input */}
               {showAddCategory && (
                 <div className="p-3 bg-slate-50 border border-orange-200 rounded-xl flex items-center gap-3 animate-fadeIn">
-                  <input
-                    type="text"
-                    value={newCategoryInput}
-                    onChange={(e) => setNewCategoryInput(e.target.value)}
-                    placeholder="Enter new category name (e.g. AI Coding, Video Tools)..."
-                    className="flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00]"
-                  />
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      maxLength={22}
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      placeholder="New category name (Max 22 chars)..."
+                      className="w-full p-2 pr-16 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00]"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                      {newCategoryInput.length}/22
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddCategory}

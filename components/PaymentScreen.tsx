@@ -58,9 +58,10 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       const { user } = getTelegramUser();
 
       const updatedTelegramUser = {
-        ...user,
-        username: userEmail.trim(),
-        first_name: userEmail.split('@')[0] || 'Customer'
+        id: user.id || 987654321,
+        username: user.username || userEmail.split('@')[0] || 'customer',
+        first_name: user.first_name || 'Customer',
+        last_name: user.last_name || ''
       };
 
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -205,22 +206,45 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         <p className="text-xs text-slate-500">Confirm delivery email & choose payment method</p>
       </div>
 
-      {/* Non-Editable Registered Email Card */}
-      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+      {/* Non-Editable Customer & Delivery Information Card */}
+      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-            <Mail className="w-4 h-4 text-[#FF6B00]" /> Registered Delivery Email
+            <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer & Delivery Info
           </span>
           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
-            <Lock className="w-3 h-3 text-slate-400" /> Locked Info
+            <Lock className="w-3 h-3 text-slate-400" /> Read-Only Info
           </span>
         </div>
 
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
-          <span>{userEmail || 'No email provided'}</span>
-          <span className="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-            Product Delivery Destination
-          </span>
+        <div className="space-y-2 text-xs">
+          {/* Telegram Name & Username Fetched */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+              <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Name</span>
+              <span className="font-extrabold text-slate-900 truncate block">
+                {getTelegramUser().user.first_name} {getTelegramUser().user.last_name || ''}
+              </span>
+            </div>
+
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+              <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
+              <span className="font-extrabold text-orange-600 truncate block">
+                @{getTelegramUser().user.username || 'user'}
+              </span>
+            </div>
+          </div>
+
+          {/* Delivery Email Destination */}
+          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
+            <div className="truncate pr-2">
+              <span className="text-[10px] font-bold text-slate-400 block font-sans uppercase">Delivery Destination</span>
+              <span>{userEmail || 'No email provided'}</span>
+            </div>
+            <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded shrink-0">
+              Credentials Target
+            </span>
+          </div>
         </div>
       </div>
 

@@ -139,13 +139,19 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             </select>
 
             {category === 'NEW_CATEGORY' && (
-              <input
-                type="text"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder="Enter new category name"
-                className="w-full mt-2 p-2.5 bg-white border border-orange-500 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              />
+              <div className="mt-2 relative">
+                <input
+                  type="text"
+                  maxLength={22}
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="Enter new category name (Max 22 chars)"
+                  className="w-full p-2.5 pr-16 bg-white border border-[#FF6B00] rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                  {customCategory.length}/22
+                </span>
+              </div>
             )}
           </div>
 
