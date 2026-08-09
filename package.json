@@ -10,11 +10,14 @@
     "bot": "tsx scripts/bot-runner.ts"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.19",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.427.0",
     "next": "^14.2.5",
+    "postcss": "^8.4.38",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.4"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
