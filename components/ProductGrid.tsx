@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Search, Sparkles } from 'lucide-react';
 import { PRODUCTS, Product } from '@/config/products';
 import { ProductCard } from './ProductCard';
-import { triggerHaptic } from '@/lib/telegram';
 
 interface ProductGridProps {
   cart: { product: Product; quantity: number }[];
@@ -12,16 +11,12 @@ interface ProductGridProps {
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const categories = ['All', 'AI Chatbot', 'AI Reasoning', 'AI Search', 'Design & AI', 'Video & AI', 'Entertainment', 'AI Art', 'AI Workspace'];
-
   const filteredProducts = PRODUCTS.filter((p) => {
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   const getCartQuantity = (productId: string) => {
@@ -59,31 +54,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search ChatGPT, Gemini, Claude..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-xs transition-all"
+          className="w-full pl-10 pr-4 py-2.5 bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-xs transition-all"
         />
-      </div>
-
-      {/* Horizontal Category Selector */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar -mx-1 px-1">
-        {categories.map((cat) => {
-          const isActive = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => {
-                triggerHaptic('light');
-                setSelectedCategory(cat);
-              }}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
-              }`}
-            >
-              {cat}
-            </button>
-          );
-        })}
       </div>
 
       {/* 2-Column Mobile Product Grid */}
@@ -99,9 +71,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 p-6">
+        <div className="text-center py-12 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 p-6">
           <p className="text-sm font-semibold text-slate-700">No products found</p>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting your search query or filter.</p>
+          <p className="text-xs text-slate-500 mt-1">Try searching for a different service name.</p>
         </div>
       )}
     </div>
