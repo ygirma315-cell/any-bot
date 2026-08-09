@@ -1,11 +1,35 @@
-import { config } from 'dotenv';
-config();
+import fs from 'fs';
+import path from 'path';
+
+// Simple lightweight env loader for local standalone script
+function loadEnv() {
+  const envPath = path.resolve(process.cwd(), '.env.local');
+  const fallbackEnvPath = path.resolve(process.cwd(), '.env');
+  
+  const targetPath = fs.existsSync(envPath) ? envPath : fs.existsSync(fallbackEnvPath) ? fallbackEnvPath : null;
+
+  if (targetPath) {
+    const envConfig = fs.readFileSync(targetPath, 'utf8');
+    for (const line of envConfig.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        const val = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
+        if (key && !process.env[key.trim()]) {
+          process.env[key.trim()] = val;
+        }
+      }
+    }
+  }
+}
+
+loadEnv();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 if (!BOT_TOKEN || BOT_TOKEN.includes('123456789:ABCdef')) {
-  console.error('\n❌ ERROR: Please set TELEGRAM_BOT_TOKEN in your .env file to run the local Telegram Bot.\n');
+  console.error('\n❌ ERROR: Please set TELEGRAM_BOT_TOKEN in your .env.local file to run the local Telegram Bot.\n');
   process.exit(1);
 }
 
