@@ -31,8 +31,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
   };
 
   return (
-    <div className="card-flip-scene min-h-[280px]">
-      <div className={`card-flip-inner min-h-[280px] ${isFlipped ? 'is-flipped' : ''}`}>
+    <div className="card-flip-scene min-h-[275px]">
+      <div className={`card-flip-inner min-h-[275px] ${isFlipped ? 'is-flipped' : ''}`}>
         
         {/* ==================== FRONT FACE ==================== */}
         <div className="card-face p-3.5 flex flex-col justify-between border border-slate-200/80 shadow-sm rounded-2xl relative overflow-hidden group hover:shadow-md transition-all duration-300 bg-white/90 backdrop-blur-md">
@@ -45,13 +45,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
 
           <div>
             {/* Header: Product Logo */}
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="w-12 h-12 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-11 h-11 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
                 <Image
                   src={product.logoPath}
                   alt={product.name}
-                  width={40}
-                  height={40}
+                  width={38}
+                  height={38}
                   className="object-contain w-full h-full"
                 />
               </div>
@@ -64,10 +64,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
             </div>
 
             {/* Product Title & Description */}
-            <h3 className="heading-font text-sm font-bold text-slate-900 leading-tight mb-1 line-clamp-1">
+            <h3 className="heading-font text-xs font-bold text-slate-900 leading-tight mb-1 line-clamp-1">
               {product.name}
             </h3>
-            <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug mb-3">
+            <p className="text-[10.5px] text-slate-500 line-clamp-2 leading-snug mb-2.5">
               {product.shortDescription}
             </p>
           </div>
@@ -75,16 +75,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
           {/* Bottom Section: Price, Warranty & Action Buttons */}
           <div className="mt-auto">
             {/* Warranty Badge */}
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/90 px-2 py-1 rounded-lg border border-emerald-200/60 mb-3">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 px-2 py-0.5 rounded-lg border border-emerald-200/60 mb-2.5">
+              <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
               <span className="truncate">{product.warranty}</span>
             </div>
 
             {/* Price */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-baseline gap-0.5">
-                <span className="text-xs font-semibold text-slate-500">{product.currency}</span>
-                <span className="text-lg font-extrabold text-slate-900">{product.price}</span>
+                <span className="text-[11px] font-semibold text-slate-500">{product.currency}</span>
+                <span className="text-base font-extrabold text-slate-900">{product.price}</span>
               </div>
             </div>
 
@@ -93,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <button
                 type="button"
                 onClick={handleFlip}
-                className="py-1.5 px-2.5 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center justify-center gap-1 transition-all"
+                className="py-1.5 px-2 rounded-full text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 flex items-center justify-center gap-1 transition-all"
               >
                 <Info className="w-3 h-3 text-slate-500" />
                 <span>Info</span>
@@ -123,40 +123,50 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         </div>
 
         {/* ==================== BACK FACE (INFO) ==================== */}
-        <div className="card-face card-face-back p-3.5 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md">
+        {/* Tapping anywhere on the back face flips it back smoothly! Overflow is hidden (no scrolling) */}
+        <div
+          onClick={handleFlip}
+          className="card-face card-face-back p-3 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md cursor-pointer select-none overflow-hidden"
+        >
           <div>
-            {/* Top Bar: Fixed Back Button & Warranty Badge (Replaced Product Details title) */}
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            {/* Top Bar: Fixed Back Button & Warranty Badge */}
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100">
               <button
                 type="button"
                 onClick={handleFlip}
-                className="py-1 px-2.5 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-200 flex items-center gap-1 transition-all shadow-xs"
+                className="py-0.5 px-2 rounded-full text-[10px] font-bold bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-200 flex items-center gap-1 transition-all shadow-xs"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                <ArrowLeft className="w-3 h-3 text-slate-600" />
                 <span>Back</span>
               </button>
 
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                🛡 {product.warrantyDays} Days Warranty
+              <span className="text-[9.5px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200/60">
+                🛡 {product.warrantyDays}D Warranty
               </span>
             </div>
 
-            <h4 className="heading-font text-xs font-bold text-slate-900 mb-1">
+            <h4 className="heading-font text-xs font-bold text-slate-900 mb-0.5 truncate">
               {product.name}
             </h4>
-            <p className="text-[11px] text-slate-600 leading-normal mb-3">
+            <p className="text-[10px] text-slate-600 leading-tight mb-2 line-clamp-2">
               {product.fullDescription}
             </p>
 
-            <div className="space-y-1.5 mb-2">
-              <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">Terms & Rules:</p>
-              {product.features.map((feat, idx) => (
-                <div key={idx} className="flex items-start gap-1.5 text-[10.5px] text-slate-600">
+            <div className="space-y-1">
+              <p className="text-[9.5px] font-bold text-slate-700 uppercase tracking-tight">Terms & Rules:</p>
+              {product.features.slice(0, 3).map((feat, idx) => (
+                <div key={idx} className="flex items-start gap-1 text-[9.5px] text-slate-600 leading-tight">
                   <span className="text-emerald-500 font-bold">•</span>
-                  <span>{feat}</span>
+                  <span className="line-clamp-1">{feat}</span>
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="pt-1.5 border-t border-slate-100 text-center">
+            <span className="text-[9.5px] font-medium text-indigo-600">
+              👆 Tap card to return
+            </span>
           </div>
         </div>
 
