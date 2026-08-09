@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
   };
 
   return (
-    <nav className="sticky bottom-0 z-40 px-4 py-2.5 bg-white/90 backdrop-blur-xl border-t border-slate-100/90 shadow-lg">
+    <nav className="relative z-30 shrink-0 w-full px-4 py-2.5 bg-white/90 backdrop-blur-xl border-t border-slate-200/70 shadow-lg">
       <div className="relative flex items-center justify-around max-w-md mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;

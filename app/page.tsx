@@ -32,7 +32,7 @@ export default function Home() {
       }
       return [...prevCart, { product, quantity: 1 }];
     });
-    // Auto-navigate user directly to Order page on Add!
+    // Auto-navigate user directly to Order page on Add
     setActiveTab('order');
   };
 
@@ -57,16 +57,16 @@ export default function Home() {
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="app-viewport">
+    <div className="app-viewport flex flex-col h-screen overflow-hidden">
       {/* Dynamic Ambient RGB Lighting System */}
       <RgbAtmosphere activeTab={activeTab} />
 
-      {/* Main Glass Shell */}
-      <div className="relative z-10 flex flex-col min-h-full flex-1">
-        {/* Sticky Header */}
+      {/* Main App Container Shell */}
+      <div className="relative z-10 flex flex-col h-full w-full overflow-hidden">
+        {/* Fixed Top Header (Never Scrolls) */}
         <Header />
 
-        {/* Tab View Container */}
+        {/* Scrollable Middle Content Body */}
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           {activeTab === 'services' && (
             <ProductGrid cart={cart} onAddToCart={handleAddToCart} />
@@ -91,7 +91,7 @@ export default function Home() {
           )}
         </main>
 
-        {/* Bottom Navigation */}
+        {/* Fixed Bottom Navigation (Never Scrolls) */}
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}

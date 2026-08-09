@@ -17,7 +17,7 @@ export const Header: React.FC = () => {
     : userData?.user.first_name || 'Customer';
 
   return (
-    <header className="sticky top-0 z-30 px-5 pt-4 pb-3 bg-white/85 backdrop-blur-md border-b border-slate-200/60 shadow-xs transition-all">
+    <header className="relative z-30 shrink-0 w-full px-5 pt-4 pb-3 bg-white/90 backdrop-blur-xl border-b border-slate-200/70 shadow-xs">
       <div className="flex items-center justify-between gap-2">
         {/* Store Title */}
         <div className="flex items-center gap-2">
@@ -36,7 +36,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* User Badge (Replaced Browser Mode text with User Name) */}
+        {/* User Badge */}
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 border border-slate-200/80 shadow-xs">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
