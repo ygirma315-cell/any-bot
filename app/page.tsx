@@ -14,6 +14,7 @@ import { getTelegramWebApp } from '@/lib/telegram';
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment' | 'status'>('services');
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     const webApp = getTelegramWebApp();
@@ -76,6 +77,8 @@ export default function Home() {
           {activeTab === 'order' && (
             <OrderScreen
               cart={cart}
+              userEmail={userEmail}
+              setUserEmail={setUserEmail}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
               onProceedToPayment={() => setActiveTab('payment')}
@@ -86,6 +89,7 @@ export default function Home() {
           {activeTab === 'payment' && (
             <PaymentScreen
               cart={cart}
+              userEmail={userEmail}
               onOrderCompleted={() => setCart([])}
               onBrowseServices={() => setActiveTab('services')}
               onViewStatus={() => setActiveTab('status')}

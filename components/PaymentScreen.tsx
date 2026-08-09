@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
 import { PAYMENT_METHODS, PaymentMethod } from '@/config/payments';
@@ -8,10 +8,11 @@ import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
 import { addOrder } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
-import { Copy, Check, ShieldCheck, CheckCircle2, Loader2, Sparkles, User, Mail, Send } from 'lucide-react';
+import { Copy, Check, ShieldCheck, ShieldAlert, CheckCircle2, Loader2, Sparkles, Mail, Send, Lock, FileText, Info } from 'lucide-react';
 
 interface PaymentScreenProps {
   cart: { product: Product; quantity: number }[];
+  userEmail: string;
   onOrderCompleted: () => void;
   onBrowseServices: () => void;
   onViewStatus?: () => void;
@@ -19,6 +20,7 @@ interface PaymentScreenProps {
 
 export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   cart,
+  userEmail,
   onOrderCompleted,
   onBrowseServices,
   onViewStatus
@@ -27,21 +29,10 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // User details input states
-  const [telegramUsername, setTelegramUsername] = useState<string>('');
-  const [userEmail, setUserEmail] = useState<string>('');
-
   const [submittedOrder, setSubmittedOrder] = useState<{
     orderId: string;
     timestamp: string;
   } | null>(null);
-
-  useEffect(() => {
-    const { user } = getTelegramUser();
-    if (user?.username) {
-      setTelegramUsername(user.username.startsWith('@') ? user.username : `@${user.username}`);
-    }
-  }, []);
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
@@ -55,8 +46,8 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   const handlePaidSubmit = async () => {
     if (!selectedMethod || cart.length === 0) return;
 
-    if (!telegramUsername.trim()) {
-      alert('Please enter your Telegram Username before submitting payment.');
+    if (!userEmail.trim()) {
+      alert('Delivery email is missing. Please return to the Order screen and enter your email.');
       return;
     }
 
@@ -65,12 +56,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
     try {
       const { user } = getTelegramUser();
-      const cleanUsername = telegramUsername.trim().replace(/^@/, '');
 
       const updatedTelegramUser = {
         ...user,
-        username: cleanUsername,
-        first_name: user.first_name || cleanUsername || 'Customer'
+        username: userEmail.trim(),
+        first_name: userEmail.split('@')[0] || 'Customer'
       };
 
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -86,7 +76,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           name: item.product.name,
           price: item.product.price,
           quantity: item.quantity,
-          warranty: item.product.warranty || '20 Days Warranty'
+          warranty: item.product.isWarranty !== false ? (item.product.warranty || 'Warranty Included') : 'No Warranty'
         })),
         subtotal: totalAmount,
         total: totalAmount,
@@ -111,7 +101,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           body: JSON.stringify(payload)
         });
       } catch {
-        // backend api notification optional
+        // backend notification optional
       }
 
       try {
@@ -146,13 +136,13 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
         <div>
           <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200 mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Payment Notification Received
+            <Sparkles className="w-3.5 h-3.5" /> Payment Notification Submitted
           </div>
           <h2 className="heading-font text-xl font-extrabold text-slate-900">
             Order Submitted!
           </h2>
           <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
-            Our admin team is verifying your payment for handle <span className="font-bold text-indigo-600">{telegramUsername}</span>. Track status live under the Status tab!
+            Our admin team is verifying your payment. Your product credentials will be dispatched to <span className="font-bold text-[#FF6B00]">{userEmail}</span> upon verification.
           </p>
         </div>
 
@@ -164,12 +154,12 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           <div className="flex justify-between text-slate-600">
             <span>Status:</span>
             <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/50">
-              Pending Admin Acceptance
+              Pending Admin Verification
             </span>
           </div>
           <div className="flex justify-between text-slate-600">
-            <span>Telegram User:</span>
-            <span className="font-bold text-slate-800">{telegramUsername}</span>
+            <span>Delivery Email:</span>
+            <span className="font-bold text-slate-900">{userEmail}</span>
           </div>
           <div className="flex justify-between text-slate-600">
             <span>Time:</span>
@@ -186,7 +176,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 setSubmittedOrder(null);
                 onViewStatus();
               }}
-              className="btn-pill btn-pill-primary py-3 text-xs font-bold shadow-md"
+              className="btn-pill btn-pill-primary py-3 text-xs font-bold shadow-md bg-[#FF6B00] text-white"
             >
               Track Order Status
             </button>
@@ -211,46 +201,38 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   return (
     <div className="px-4 py-4 space-y-4 pb-12">
       <div>
-        <h2 className="heading-font text-lg font-bold text-slate-900">SELECT PAYMENT METHOD</h2>
-        <p className="text-xs text-slate-500">Choose payment method & enter your details</p>
+        <h2 className="heading-font text-lg font-bold text-slate-900">PAYMENT DETAILS</h2>
+        <p className="text-xs text-slate-500">Confirm delivery email & choose payment method</p>
       </div>
 
-      {/* User Telegram Username & Email Input Form */}
-      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-indigo-100 shadow-sm space-y-3">
-        <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
-          <User className="w-4 h-4 text-indigo-600" /> Customer Information
-        </h3>
-
-        <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-            Telegram Username <span className="text-rose-500">*</span>
-          </label>
-          <div className="relative">
-            <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={telegramUsername}
-              onChange={(e) => setTelegramUsername(e.target.value)}
-              placeholder="@username"
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white"
-            />
-          </div>
+      {/* Non-Editable Registered Email Card */}
+      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+            <Mail className="w-4 h-4 text-[#FF6B00]" /> Registered Delivery Email
+          </span>
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
+            <Lock className="w-3 h-3 text-slate-400" /> Locked Info
+          </span>
         </div>
 
-        <div>
-          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-            Email Address <span className="text-slate-400 font-normal">(Optional for delivery)</span>
-          </label>
-          <div className="relative">
-            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              placeholder="user@example.com"
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white"
-            />
-          </div>
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
+          <span>{userEmail || 'No email provided'}</span>
+          <span className="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+            Product Delivery Destination
+          </span>
+        </div>
+      </div>
+
+      {/* Short Updated Payment Rules Card */}
+      <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
+        <p className="font-extrabold text-orange-950 flex items-center gap-1">
+          <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment & Refund Policy:
+        </p>
+        <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
+          <p>• <strong>1 Product = 1 Email:</strong> Each email address can only be used once per product.</p>
+          <p>• <strong>Warranty Products:</strong> Refunds & replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
+          <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
         </div>
       </div>
 
@@ -267,7 +249,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               }}
               className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
                 isSelected
-                  ? 'bg-white/95 backdrop-blur-md border-indigo-500 shadow-md ring-2 ring-indigo-500/10'
+                  ? 'bg-white/95 backdrop-blur-md border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/10'
                   : 'bg-white/80 backdrop-blur-md border-slate-200/80 hover:border-slate-300 shadow-xs'
               }`}
             >
@@ -295,7 +277,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
                 <div
                   className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                    isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
+                    isSelected ? 'border-[#FF6B00] bg-[#FF6B00] text-white' : 'border-slate-300'
                   }`}
                 >
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -306,7 +288,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-3 animate-fadeIn">
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
                     <span className="text-xs font-medium text-slate-600">Amount to Transfer:</span>
-                    <span className="heading-font text-base font-extrabold text-indigo-600">
+                    <span className="heading-font text-base font-extrabold text-[#FF6B00]">
                       ${totalAmount.toFixed(2)} USD
                     </span>
                   </div>
@@ -340,11 +322,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
-                    <p className="text-[11px] font-bold text-indigo-900 mb-1">Instructions:</p>
+                  <div className="space-y-1 bg-orange-50/50 p-3 rounded-xl border border-orange-100">
+                    <p className="text-[11px] font-bold text-orange-950 mb-1">Payment Instructions:</p>
                     {method.instructions.map((step, idx) => (
                       <p key={idx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
-                        <span className="font-bold text-indigo-600">{idx + 1}.</span>
+                        <span className="font-bold text-[#FF6B00]">{idx + 1}.</span>
                         <span>{step}</span>
                       </p>
                     ))}
@@ -355,7 +337,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     type="button"
                     disabled={isSubmitting || cart.length === 0}
                     onClick={handlePaidSubmit}
-                    className="btn-pill btn-pill-primary w-full py-4 text-xs font-extrabold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white transition-all transform active:scale-95"
+                    className="btn-pill btn-pill-primary w-full py-4 text-xs font-extrabold shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95"
                   >
                     {isSubmitting ? (
                       <>
