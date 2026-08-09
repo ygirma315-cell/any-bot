@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       status: 'Payment Submitted'
     };
 
-    // Dispatch notification to Telegram Bot Admin
+    // Safely attempt notification
     const telegramResult = await sendTelegramAdminNotification(orderPayload);
 
     return NextResponse.json({
