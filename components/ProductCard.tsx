@@ -125,10 +125,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         {/* ==================== BACK FACE (INFO) ==================== */}
         <div className="card-face card-face-back p-3.5 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md">
           <div>
+            {/* Top Bar: Fixed Back Button & Warranty Badge (Replaced Product Details title) */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-              <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                Product Details
-              </span>
+              <button
+                type="button"
+                onClick={handleFlip}
+                className="py-1 px-2.5 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-200 flex items-center gap-1 transition-all shadow-xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                <span>Back</span>
+              </button>
+
               <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
                 🛡 {product.warrantyDays} Days Warranty
               </span>
@@ -141,7 +148,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               {product.fullDescription}
             </p>
 
-            <div className="space-y-1.5 mb-3">
+            <div className="space-y-1.5 mb-2">
               <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">Terms & Rules:</p>
               {product.features.map((feat, idx) => (
                 <div key={idx} className="flex items-start gap-1.5 text-[10.5px] text-slate-600">
@@ -151,16 +158,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               ))}
             </div>
           </div>
-
-          {/* High-Contrast Clean Back Button */}
-          <button
-            type="button"
-            onClick={handleFlip}
-            className="w-full py-2 px-3 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 border border-slate-200 flex items-center justify-center gap-1.5 transition-all shadow-xs mt-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
-            <span>Back to Card</span>
-          </button>
         </div>
 
       </div>
