@@ -72,7 +72,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
             </p>
           </div>
 
-          {/* Bottom Section: Price, Warranty & Action Buttons */}
+          {/* Bottom Section: Price, Stock, Warranty & Action Buttons */}
           <div className="mt-auto">
             {/* Warranty Badge */}
             <div className="flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 px-2 py-0.5 rounded-lg border border-emerald-200/60 mb-2.5">
@@ -80,12 +80,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <span className="truncate">{product.warranty}</span>
             </div>
 
-            {/* Price */}
+            {/* Price & Available Stock Tag */}
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-baseline gap-0.5">
                 <span className="text-[11px] font-semibold text-slate-500">{product.currency}</span>
                 <span className="text-base font-extrabold text-slate-900">{product.price}</span>
               </div>
+
+              <span className="text-[9.5px] font-extrabold text-amber-700 bg-amber-50/90 px-2 py-0.5 rounded-full border border-amber-200/70 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span>{product.stock} Stock</span>
+              </span>
             </div>
 
             {/* Action Buttons */}
@@ -123,7 +128,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         </div>
 
         {/* ==================== BACK FACE (INFO) ==================== */}
-        {/* Tapping anywhere on the back face flips it back smoothly! Overflow is hidden (no scrolling) */}
         <div
           onClick={handleFlip}
           className="card-face card-face-back p-3 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md cursor-pointer select-none overflow-hidden"

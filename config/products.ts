@@ -8,9 +8,10 @@ export interface Product {
   warranty: string;
   warrantyDays: number;
   available: boolean;
-  category: 'AI Chatbot' | 'AI Reasoning' | 'AI Search' | 'Design & AI' | 'Video & AI' | 'AI Productivity' | 'Entertainment' | 'AI Art' | 'AI Workspace';
+  stock: number;
+  category: string;
   logoPath: string;
-  accentColor: string; // Soft RGB reflection accent color
+  accentColor: string;
   features: string[];
 }
 
@@ -25,7 +26,8 @@ export const PRODUCTS: Product[] = [
     warranty: '20 Days Warranty',
     warrantyDays: 20,
     available: true,
-    category: 'AI Chatbot',
+    stock: 14,
+    category: 'AI Service',
     logoPath: '/assets/products/chatgpt.svg',
     accentColor: 'rgba(16, 163, 127, 0.4)',
     features: [
@@ -45,7 +47,8 @@ export const PRODUCTS: Product[] = [
     warranty: '15 Days Warranty',
     warrantyDays: 15,
     available: true,
-    category: 'AI Chatbot',
+    stock: 9,
+    category: 'AI Service',
     logoPath: '/assets/products/gemini.svg',
     accentColor: 'rgba(74, 144, 226, 0.4)',
     features: [
@@ -65,7 +68,8 @@ export const PRODUCTS: Product[] = [
     warranty: '20 Days Warranty',
     warrantyDays: 20,
     available: true,
-    category: 'AI Reasoning',
+    stock: 11,
+    category: 'AI Service',
     logoPath: '/assets/products/claude.svg',
     accentColor: 'rgba(217, 119, 6, 0.4)',
     features: [
@@ -85,7 +89,8 @@ export const PRODUCTS: Product[] = [
     warranty: '30 Days Warranty',
     warrantyDays: 30,
     available: true,
-    category: 'AI Search',
+    stock: 18,
+    category: 'AI Service',
     logoPath: '/assets/products/perplexity.svg',
     accentColor: 'rgba(20, 184, 166, 0.4)',
     features: [
@@ -105,7 +110,8 @@ export const PRODUCTS: Product[] = [
     warranty: '30 Days Warranty',
     warrantyDays: 30,
     available: true,
-    category: 'Design & AI',
+    stock: 22,
+    category: 'AI Service',
     logoPath: '/assets/products/canva.svg',
     accentColor: 'rgba(124, 58, 237, 0.4)',
     features: [
@@ -125,7 +131,8 @@ export const PRODUCTS: Product[] = [
     warranty: '30 Days Warranty',
     warrantyDays: 30,
     available: true,
-    category: 'Video & AI',
+    stock: 15,
+    category: 'AI Service',
     logoPath: '/assets/products/capcut.svg',
     accentColor: 'rgba(236, 72, 153, 0.4)',
     features: [
@@ -145,7 +152,8 @@ export const PRODUCTS: Product[] = [
     warranty: '20 Days Warranty',
     warrantyDays: 20,
     available: true,
-    category: 'AI Productivity',
+    stock: 7,
+    category: 'AI Service',
     logoPath: '/assets/products/copilot.svg',
     accentColor: 'rgba(37, 99, 235, 0.4)',
     features: [
@@ -165,7 +173,8 @@ export const PRODUCTS: Product[] = [
     warranty: '30 Days Warranty',
     warrantyDays: 30,
     available: true,
-    category: 'Entertainment',
+    stock: 25,
+    category: 'AI Service',
     logoPath: '/assets/products/youtube.svg',
     accentColor: 'rgba(239, 68, 68, 0.4)',
     features: [
@@ -185,7 +194,8 @@ export const PRODUCTS: Product[] = [
     warranty: '15 Days Warranty',
     warrantyDays: 15,
     available: true,
-    category: 'AI Art',
+    stock: 6,
+    category: 'AI Service',
     logoPath: '/assets/products/midjourney.svg',
     accentColor: 'rgba(168, 85, 247, 0.4)',
     features: [
@@ -205,7 +215,8 @@ export const PRODUCTS: Product[] = [
     warranty: '30 Days Warranty',
     warrantyDays: 30,
     available: true,
-    category: 'AI Workspace',
+    stock: 16,
+    category: 'AI Service',
     logoPath: '/assets/products/notion.svg',
     accentColor: 'rgba(30, 41, 59, 0.4)',
     features: [
