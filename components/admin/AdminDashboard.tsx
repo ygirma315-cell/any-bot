@@ -6,7 +6,7 @@ import { Product } from '@/config/products';
 import { getStoredProducts, saveStoredProducts, getStoredCategories, saveStoredCategories, getStoredOrders } from '@/lib/store';
 import { ProductEditorModal } from './ProductEditorModal';
 import { AdminOrdersView } from './AdminOrdersView';
-import { Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, Tag, ExternalLink, Sparkles, FolderPlus, Layers, Store } from 'lucide-react';
+import { Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, Tag, ExternalLink, Sparkles, FolderPlus, Layers, Store, Edit2, X } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -44,11 +44,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     const handleOrdersUpdate = () => refreshData();
 
     window.addEventListener('ai_store_products_updated', handleProductsUpdate);
-    window.addEventListener('ai_store_orders_updated', handleOrdersUpdate);
+    window.addEventListener('ai_store_categories_updated', handleOrdersUpdate);
 
     return () => {
       window.removeEventListener('ai_store_products_updated', handleProductsUpdate);
-      window.removeEventListener('ai_store_orders_updated', handleOrdersUpdate);
+      window.removeEventListener('ai_store_categories_updated', handleOrdersUpdate);
     };
   }, []);
 
@@ -89,6 +89,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
     setNewCategoryInput('');
     setShowAddCategory(false);
+  };
+
+  const handleRenameCategory = (oldCategory: string) => {
+    if (oldCategory === 'All') return;
+    const newName = prompt(`Rename category "${oldCategory}" to:`, oldCategory);
+    if (!newName || !newName.trim() || newName.trim() === oldCategory) return;
+    const cleanNewName = newName.trim();
+
+    // Update categories list
+    const updatedCats = categories.map(c => c === oldCategory ? cleanNewName : c);
+    saveStoredCategories(updatedCats);
+
+    // Update products assigned to this category
+    const updatedProds = products.map(p => {
+      if (p.category === oldCategory) {
+        return { ...p, category: cleanNewName };
+      }
+      return p;
+    });
+    saveStoredProducts(updatedProds);
+  };
+
+  const handleDeleteCategory = (catToDelete: string) => {
+    if (catToDelete === 'All') return;
+    if (confirm(`Are you sure you want to delete category "${catToDelete}"?`)) {
+      const updatedCats = categories.filter(c => c !== catToDelete);
+      saveStoredCategories(updatedCats);
+    }
   };
 
   return (
@@ -208,7 +236,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-white/95 rounded-2xl border border-slate-200/90 shadow-xs">
             <div>
               <h2 className="heading-font text-base font-extrabold text-slate-900">Product Catalog & Category Controls</h2>
-              <p className="text-xs text-slate-500 font-medium">Edit categories, title limits, price, and warranty badges (Green vs Red logo).</p>
+              <p className="text-xs text-slate-500 font-medium">Edit product details, edit/rename categories, set prices, and toggle warranty badges.</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -255,18 +283,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </div>
           )}
 
-          {/* Category List Tags */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-xs font-bold text-slate-500 shrink-0">Active Categories:</span>
-            {categories.map((cat) => (
-              <span
-                key={cat}
-                className="px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold shrink-0 flex items-center gap-1 shadow-2xs"
-              >
-                <Tag className="w-3 h-3 text-orange-500" />
-                <span>{cat}</span>
-              </span>
-            ))}
+          {/* Category List Tags with Rename & Delete options */}
+          <div className="p-4 bg-white/80 rounded-2xl border border-slate-200/90 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Category Management (Edit / Rename):</span>
+              <span className="text-[11px] text-slate-500">Tap ✏️ to rename category</span>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+              {categories.map((cat) => (
+                <div
+                  key={cat}
+                  className="px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 text-xs font-bold shrink-0 flex items-center gap-2 shadow-2xs"
+                >
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3.5 h-3.5 text-orange-600" />
+                    <span>{cat}</span>
+                  </span>
+
+                  {cat !== 'All' && (
+                    <div className="flex items-center gap-1 border-l border-orange-200 pl-1.5 ml-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleRenameCategory(cat)}
+                        className="text-orange-600 hover:text-orange-800 p-0.5 rounded transition-colors"
+                        title={`Rename category "${cat}"`}
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(cat)}
+                        className="text-slate-400 hover:text-rose-600 p-0.5 rounded transition-colors"
+                        title={`Delete category "${cat}"`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Products Grid */}

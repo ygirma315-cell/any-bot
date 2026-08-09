@@ -28,7 +28,6 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
   
   // Warranty settings
   const [isWarranty, setIsWarranty] = useState<boolean>(true);
-  const [warrantyText, setWarrantyText] = useState<string>('30 Days Warranty');
   const [warrantyDays, setWarrantyDays] = useState<number>(30);
 
   // Features list
@@ -50,7 +49,6 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       setShortDescription(product.shortDescription);
       setFullDescription(product.fullDescription);
       setIsWarranty(product.isWarranty !== false);
-      setWarrantyText(product.warranty || '30 Days Warranty');
       setWarrantyDays(product.warrantyDays || 30);
       setFeatures(product.features || []);
     } else {
@@ -91,7 +89,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       price: Number(price),
       currency: '$',
       isWarranty,
-      warranty: isWarranty ? warrantyText.trim() : 'No Warranty',
+      warranty: isWarranty ? `${Number(warrantyDays)} Days Warranty` : 'No Warranty',
       warrantyDays: isWarranty ? Number(warrantyDays) : 0,
       available: stock > 0,
       stock: Number(stock),
@@ -276,45 +274,31 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
               </button>
             </div>
 
-            {/* If Warranty is chosen, render duration inputs */}
+            {/* If Warranty is chosen, render duration number input */}
             {isWarranty ? (
               <div className="space-y-2 pt-2 border-t border-orange-200/60 animate-fadeIn">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Warranty Display Text
-                    </label>
-                    <input
-                      type="text"
-                      value={warrantyText}
-                      onChange={(e) => setWarrantyText(e.target.value)}
-                      placeholder="e.g. 30 Days Warranty"
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Duration Days
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={warrantyDays}
-                      onChange={(e) => setWarrantyDays(Number(e.target.value))}
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold"
-                    />
-                  </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Warranty Duration (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={warrantyDays}
+                    onChange={(e) => setWarrantyDays(Number(e.target.value))}
+                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-orange-500"
+                  />
                 </div>
                 {/* Live Logo Badge Preview */}
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Preview Badge: <strong>{warrantyText || `${warrantyDays} Days Warranty`}</strong> (Green Logo)</span>
+                  <span>Preview Badge: <strong>{warrantyDays} Days Warranty</strong> (Green Badge)</span>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-[11px] animate-fadeIn">
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] animate-fadeIn">
                 <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>Preview Badge: <strong>No Warranty</strong> (Red Logo)</span>
+                <span>Preview Badge: <strong>No Warranty</strong> (Red Badge)</span>
               </div>
             )}
           </div>
