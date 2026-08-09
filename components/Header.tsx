@@ -35,16 +35,16 @@ export const Header: React.FC = () => {
   return (
     <header className="relative z-30 shrink-0 w-full px-5 py-3.5 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-xs transition-all">
       <div className="flex items-center justify-between gap-2">
-        {/* Store Title & Composite AI Brand Emblem (ChatGPT + Gemini + Claude + Perplexity) */}
+        {/* BUY AI STORE Header Title & Custom Unified AI Emblem Logo */}
         <div className="flex items-center gap-2.5">
-          {/* Composite AI Brand Logo Badge */}
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 p-[1.5px] shadow-sm flex items-center justify-center shrink-0">
-            <div className="w-full h-full bg-white rounded-[10.5px] p-0.5 grid grid-cols-2 gap-0.5 overflow-hidden">
-              <Image src="/assets/products/chatgpt.png" alt="ChatGPT" width={18} height={18} className="object-contain w-full h-full rounded-xs" />
-              <Image src="/assets/products/gemini.jpg" alt="Gemini" width={18} height={18} className="object-contain w-full h-full rounded-xs" />
-              <Image src="/assets/products/claude.png" alt="Claude" width={18} height={18} className="object-contain w-full h-full rounded-xs" />
-              <Image src="/assets/products/perplexity.svg" alt="Perplexity" width={18} height={18} className="object-contain w-full h-full rounded-xs" />
-            </div>
+          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white flex items-center justify-center p-0.5 shrink-0">
+            <Image
+              src="/assets/buy_ai_store_logo.png"
+              alt="BUY AI STORE Logo"
+              width={40}
+              height={40}
+              className="object-cover w-full h-full rounded-lg"
+            />
           </div>
 
           <div>
