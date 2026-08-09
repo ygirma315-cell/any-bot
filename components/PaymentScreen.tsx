@@ -1,31 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
 import { PAYMENT_METHODS, PaymentMethod } from '@/config/payments';
 import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
-import { Copy, Check, ShieldCheck, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { addOrder } from '@/lib/store';
+import { OrderPayload } from '@/lib/bot';
+import { Copy, Check, ShieldCheck, CheckCircle2, Loader2, Sparkles, User, Mail, Send } from 'lucide-react';
 
 interface PaymentScreenProps {
   cart: { product: Product; quantity: number }[];
   onOrderCompleted: () => void;
   onBrowseServices: () => void;
+  onViewStatus?: () => void;
 }
 
 export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   cart,
   onOrderCompleted,
-  onBrowseServices
+  onBrowseServices,
+  onViewStatus
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(PAYMENT_METHODS[0]);
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // User details input states
+  const [telegramUsername, setTelegramUsername] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+
   const [submittedOrder, setSubmittedOrder] = useState<{
     orderId: string;
     timestamp: string;
   } | null>(null);
+
+  useEffect(() => {
+    const { user } = getTelegramUser();
+    if (user?.username) {
+      setTelegramUsername(user.username.startsWith('@') ? user.username : `@${user.username}`);
+    }
+  }, []);
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
@@ -39,20 +55,38 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   const handlePaidSubmit = async () => {
     if (!selectedMethod || cart.length === 0) return;
 
+    if (!telegramUsername.trim()) {
+      alert('Please enter your Telegram Username before submitting payment.');
+      return;
+    }
+
     triggerHaptic('heavy');
     setIsSubmitting(true);
 
     try {
       const { user } = getTelegramUser();
-      
-      const payload = {
-        telegramUser: user,
+      const cleanUsername = telegramUsername.trim().replace(/^@/, '');
+
+      const updatedTelegramUser = {
+        ...user,
+        username: cleanUsername,
+        first_name: user.first_name || cleanUsername || 'Customer'
+      };
+
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const generatedOrderId = `ORD-${dateStr}-${randomSuffix}`;
+      const orderTimestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC';
+
+      const payload: OrderPayload = {
+        orderId: generatedOrderId,
+        telegramUser: updatedTelegramUser,
         items: cart.map((item) => ({
           id: item.product.id,
           name: item.product.name,
           price: item.product.price,
           quantity: item.quantity,
-          warranty: item.product.warranty
+          warranty: item.product.warranty || '20 Days Warranty'
         })),
         subtotal: totalAmount,
         total: totalAmount,
@@ -61,36 +95,40 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           name: selectedMethod.name,
           accountName: selectedMethod.accountName,
           accountId: selectedMethod.accountId
-        }
+        },
+        timestamp: orderTimestamp,
+        status: 'Pending'
       };
 
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // Save locally to shared store so status screen and admin view update instantly
+      addOrder(payload);
 
-      const data = await res.json();
-
-      if (data.success) {
-        try {
-          confetti({
-            particleCount: 80,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        } catch {
-          // ignore confetti fallback
-        }
-
-        setSubmittedOrder({
-          orderId: data.orderId,
-          timestamp: data.timestamp
+      // Submit order via backend API
+      try {
+        await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-        onOrderCompleted();
-      } else {
-        alert(data.error || 'Failed to process payment verification.');
+      } catch {
+        // backend api notification optional
       }
+
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch {
+        // ignore confetti fallback
+      }
+
+      setSubmittedOrder({
+        orderId: generatedOrderId,
+        timestamp: orderTimestamp
+      });
+      onOrderCompleted();
     } catch (err) {
       console.error('Payment submission error:', err);
       alert('Error submitting payment notification. Please try again.');
@@ -113,8 +151,8 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           <h2 className="heading-font text-xl font-extrabold text-slate-900">
             Order Submitted!
           </h2>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">
-            Our admin team is verifying your payment. Your service details will be sent directly to your Telegram chat.
+          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
+            Our admin team is verifying your payment for handle <span className="font-bold text-indigo-600">{telegramUsername}</span>. Track status live under the Status tab!
           </p>
         </div>
 
@@ -126,8 +164,12 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           <div className="flex justify-between text-slate-600">
             <span>Status:</span>
             <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/50">
-              Payment Submitted
+              Pending Admin Acceptance
             </span>
+          </div>
+          <div className="flex justify-between text-slate-600">
+            <span>Telegram User:</span>
+            <span className="font-bold text-slate-800">{telegramUsername}</span>
           </div>
           <div className="flex justify-between text-slate-600">
             <span>Time:</span>
@@ -135,17 +177,33 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            triggerHaptic('light');
-            setSubmittedOrder(null);
-            onBrowseServices();
-          }}
-          className="btn-pill btn-pill-action w-full py-3.5 text-xs font-bold shadow-md hover:shadow-lg"
-        >
-          Return to Storefront
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          {onViewStatus && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                setSubmittedOrder(null);
+                onViewStatus();
+              }}
+              className="btn-pill btn-pill-primary py-3 text-xs font-bold shadow-md"
+            >
+              Track Order Status
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              setSubmittedOrder(null);
+              onBrowseServices();
+            }}
+            className="btn-pill btn-pill-action py-3 text-xs font-bold shadow-md"
+          >
+            Back to Store
+          </button>
+        </div>
       </div>
     );
   }
@@ -154,9 +212,49 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     <div className="px-4 py-4 space-y-4 pb-12">
       <div>
         <h2 className="heading-font text-lg font-bold text-slate-900">SELECT PAYMENT METHOD</h2>
-        <p className="text-xs text-slate-500">Choose your preferred payment method below</p>
+        <p className="text-xs text-slate-500">Choose payment method & enter your details</p>
       </div>
 
+      {/* User Telegram Username & Email Input Form */}
+      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-indigo-100 shadow-sm space-y-3">
+        <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-tight flex items-center gap-1.5">
+          <User className="w-4 h-4 text-indigo-600" /> Customer Information
+        </h3>
+
+        <div>
+          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+            Telegram Username <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative">
+            <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={telegramUsername}
+              onChange={(e) => setTelegramUsername(e.target.value)}
+              placeholder="@username"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+            Email Address <span className="text-slate-400 font-normal">(Optional for delivery)</span>
+          </label>
+          <div className="relative">
+            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="email"
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
+              placeholder="user@example.com"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-500 focus:bg-white"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Methods List */}
       <div className="space-y-2.5">
         {PAYMENT_METHODS.map((method) => {
           const isSelected = selectedMethod?.id === method.id;
@@ -252,21 +350,22 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     ))}
                   </div>
 
+                  {/* Submit Payment CTA Button */}
                   <button
                     type="button"
                     disabled={isSubmitting || cart.length === 0}
                     onClick={handlePaidSubmit}
-                    className="btn-pill btn-pill-primary w-full py-3.5 text-xs font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    className="btn-pill btn-pill-primary w-full py-4 text-xs font-extrabold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 text-white transition-all transform active:scale-95"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                        <span>Submitting Order...</span>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Submitting Payment...</span>
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                        <span>I've Paid (Submit Order)</span>
+                        <Send className="w-4 h-4 text-white" />
+                        <span>Submit Payment (I've Paid)</span>
                       </>
                     )}
                   </button>

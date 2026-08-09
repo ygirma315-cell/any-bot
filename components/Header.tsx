@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
           <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white flex items-center justify-center p-0.5 shrink-0">
             <Image
               src="/assets/buy_ai_store_logo.png"
-              alt="BUY AI STORE Logo"
+              alt="AnyAi STORE Logo"
               width={40}
               height={40}
               className="object-cover w-full h-full rounded-lg"
@@ -49,7 +49,7 @@ export const Header: React.FC = () => {
 
           <div>
             <h1 className="heading-font text-lg font-extrabold tracking-tight text-slate-900 leading-none">
-              BUY AI STORE
+              AnyAi STORE
             </h1>
             <p className="text-[11px] font-semibold text-indigo-600 tracking-wide mt-0.5">
               Premium Digital & AI Subscriptions

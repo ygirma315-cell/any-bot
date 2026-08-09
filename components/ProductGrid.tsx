@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search } from 'lucide-react';
-import { PRODUCTS, Product } from '@/config/products';
+import React, { useState, useEffect } from 'react';
+import { Search, Sparkles } from 'lucide-react';
+import { Product } from '@/config/products';
 import { ProductCard } from './ProductCard';
+import { getStoredProducts, getStoredCategories } from '@/lib/store';
+import { triggerHaptic } from '@/lib/telegram';
 
 interface ProductGridProps {
   cart: { product: Product; quantity: number }[];
@@ -12,11 +14,39 @@ interface ProductGridProps {
 
 export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
 
-  const filteredProducts = PRODUCTS.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+  const loadData = () => {
+    setProducts(getStoredProducts());
+    setCategories(getStoredCategories());
+  };
+
+  useEffect(() => {
+    loadData();
+
+    const handleUpdate = () => loadData();
+    window.addEventListener('ai_store_products_updated', handleUpdate);
+    window.addEventListener('ai_store_categories_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('ai_store_products_updated', handleUpdate);
+      window.removeEventListener('ai_store_categories_updated', handleUpdate);
+    };
+  }, []);
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === 'All' ||
+      p.category.toLowerCase().trim() === selectedCategory.toLowerCase().trim();
+
+    return matchesSearch && matchesCategory;
   });
 
   const getCartQuantity = (productId: string) => {
@@ -38,6 +68,30 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
         />
       </div>
 
+      {/* Category Pills Filter Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar no-scrollbar scroll-smooth">
+        {categories.map((cat) => {
+          const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                setSelectedCategory(cat);
+              }}
+              className={`shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-full transition-all duration-200 border ${
+                isSelected
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm scale-105'
+                  : 'bg-white/80 text-slate-600 border-slate-200/80 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              {cat === 'All' ? '⚡ All AI' : cat}
+            </button>
+          );
+        })}
+      </div>
+
       {/* 2-Column Mobile Product Grid */}
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 pb-8">
@@ -51,9 +105,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 p-6">
-          <p className="text-sm font-semibold text-slate-700">No products found</p>
-          <p className="text-xs text-slate-500 mt-1">Try searching for a different service name.</p>
+        <div className="text-center py-12 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 p-6 space-y-2">
+          <Sparkles className="w-8 h-8 text-indigo-400 mx-auto animate-pulse" />
+          <p className="text-sm font-semibold text-slate-700">No products found in this category</p>
+          <p className="text-xs text-slate-500">Try selecting another category pill or clearing your search query.</p>
         </div>
       )}
     </div>

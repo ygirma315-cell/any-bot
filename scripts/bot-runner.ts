@@ -66,13 +66,13 @@ async function handleUpdate(update: any) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: `✨ <b>Welcome to AI Store!</b>\n\nBrowse premium digital AI subscriptions with instant delivery & warranty:\n\n• ChatGPT Plus ($5)\n• Gemini AI Pro ($5)\n• Claude 3.5 Sonnet ($5)\n• Perplexity Pro ($5)\n• Canva, CapCut & more!\n\nTap below to launch the Mini App:`,
+        text: `✨ 🤖 <b>WELCOME TO AnyAi!</b> 🚀 ✨\n\n👋 <i>Greetings! Your ultimate hub for premium digital AI subscriptions with instant delivery & full warranty coverage!</i> ⚡️\n\n🔥 <b>EXPLORE OUR TOP CATEGORIES:</b>\n\n🤖 <b>AI Assistants & Intelligence</b>\n• ChatGPT Plus <i>(GPT-4o, DALL·E 3, Voice)</i> — <b>$5.00</b>\n• Gemini AI Pro <i>(1M Context & Workspace)</i> — <b>$5.00</b>\n• Claude 3.5 Sonnet <i>(Artifacts & Code)</i> — <b>$5.00</b>\n• Copilot Pro <i>(Office 365 AI)</i> — <b>$5.00</b>\n\n🔍 <b>AI Search & Productivity</b>\n• Perplexity Pro <i>(Pro Search & Citations)</i> — <b>$5.00</b>\n• Notion AI <i>(Automated Docs & Q&A)</i> — <b>$4.00</b>\n\n🎨 <b>AI Design & Video Creation</b>\n• Midjourney v6 <i>(Photorealistic Art)</i> — <b>$6.00</b>\n• Canva Pro <i>(Magic Studio AI)</i> — <b>$4.00</b>\n• CapCut Pro <i>(AI Captions & 4K Export)</i> — <b>$4.00</b>\n\n📺 <b>Media & Premium Streaming</b>\n• YouTube Premium <i>(Ad-Free & Music)</i> — <b>$4.00</b>\n\n🛡️ <b>Why Choose AnyAi?</b>\n✅ 100% Replacement Warranty Guarantee\n🚀 Instant Delivery Post Payment\n💳 Multiple Local & Crypto Payment Options\n\n👇 <b>Tap the button below to launch our Mini App:</b>`,
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: '🛍️ Open AI Store',
+                text: '🛍️ Open AnyAi Store',
                 web_app: { url: APP_URL }
               }
             ]

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Info, Plus, Check, ShieldCheck } from 'lucide-react';
+import { Info, Plus, Check, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Product } from '@/config/products';
 import { triggerHaptic } from '@/lib/telegram';
 
@@ -15,6 +15,8 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, cartQuantity }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAddedAnim, setIsAddedAnim] = useState(false);
+
+  const isWarrantyActive = product.isWarranty !== false;
 
   const handleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -40,7 +42,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
           {/* Subtle Ambient Accent Glow Reflection */}
           <div
             className="absolute top-0 right-0 w-28 h-28 rounded-full blur-2xl pointer-events-none opacity-50 transition-opacity"
-            style={{ background: product.accentColor }}
+            style={{ background: product.accentColor || 'rgba(99, 102, 241, 0.2)' }}
           />
 
           <div>
@@ -48,7 +50,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
             <div className="flex items-center justify-between mb-2.5">
               <div className="w-12 h-12 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
                 <Image
-                  src={product.logoPath}
+                  src={product.logoPath || '/assets/products/chatgpt.png'}
                   alt={product.name}
                   width={40}
                   height={40}
@@ -68,24 +70,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
 
           {/* Bottom Section: Price, Stock, Warranty & Action Buttons */}
           <div className="mt-auto">
-            {/* Warranty Badge */}
-            <div className="flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 px-2 py-1 rounded-lg border border-emerald-200/60 mb-2.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="truncate">{product.warranty}</span>
-            </div>
+            {/* Warranty Badge (Green for Warranty, Red for Non-Warranty) */}
+            {isWarrantyActive ? (
+              <div className="flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50/90 px-2 py-1 rounded-lg border border-emerald-200/60 mb-2.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">{product.warranty || 'Warranty Included'}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-[10.5px] font-semibold text-rose-700 bg-rose-50/90 px-2 py-1 rounded-lg border border-rose-200/60 mb-2.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span className="truncate">No Warranty</span>
+              </div>
+            )}
 
             {/* Price (Green) & Stock Tag (Red) */}
             <div className="flex items-center justify-between mb-3">
               {/* Green Price Tag */}
               <div className="flex items-baseline gap-0.5">
-                <span className="text-xs font-bold text-emerald-600">{product.currency}</span>
+                <span className="text-xs font-bold text-emerald-600">{product.currency || '$'}</span>
                 <span className="text-lg font-extrabold text-emerald-600">{product.price}</span>
               </div>
 
               {/* Red Stock Tag */}
               <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50/90 px-2 py-0.5 rounded-full border border-rose-200/70 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span>{product.stock} Stock</span>
+                <span>{product.stock ?? 10} Stock</span>
               </span>
             </div>
 
@@ -124,7 +133,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
         </div>
 
         {/* ==================== BACK FACE (INFO) ==================== */}
-        {/* Tapping anywhere flips back. Overflow is hidden. Spacious layout with 300px card height */}
         <div
           onClick={handleFlip}
           className="card-face card-face-back p-4 flex flex-col justify-between border border-indigo-200/80 shadow-md rounded-2xl bg-white/95 backdrop-blur-md cursor-pointer select-none overflow-hidden"
@@ -135,9 +143,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
                 Info & Terms
               </span>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-                🛡 {product.warrantyDays}D Warranty
-              </span>
+              {isWarrantyActive ? (
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> {product.warranty || `${product.warrantyDays || 30}D Warranty`}
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60 flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3 text-rose-600" /> No Warranty
+                </span>
+              )}
             </div>
 
             {/* Product Name */}

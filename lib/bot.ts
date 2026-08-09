@@ -22,7 +22,7 @@ export interface OrderPayload {
     accountId: string;
   };
   timestamp: string;
-  status: 'Pending' | 'Payment Submitted' | 'Payment Confirmed' | 'Processing' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Payment Submitted' | 'Payment Confirmed' | 'Processing' | 'Completed' | 'Cancelled' | 'Accepted' | 'Rejected';
 }
 
 export async function sendTelegramAdminNotification(payload: OrderPayload): Promise<{ success: boolean; message: string }> {

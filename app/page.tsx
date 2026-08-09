@@ -8,10 +8,11 @@ import { Navbar } from '@/components/Navbar';
 import { ProductGrid } from '@/components/ProductGrid';
 import { OrderScreen } from '@/components/OrderScreen';
 import { PaymentScreen } from '@/components/PaymentScreen';
+import { StatusScreen } from '@/components/StatusScreen';
 import { getTelegramWebApp } from '@/lib/telegram';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment' | 'status'>('services');
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function Home() {
   return (
     <div className="app-viewport flex flex-col h-screen overflow-hidden">
       {/* Dynamic Ambient RGB Lighting System */}
-      <RgbAtmosphere activeTab={activeTab} />
+      <RgbAtmosphere activeTab={activeTab === 'status' ? 'services' : activeTab} />
 
       {/* Main App Container Shell */}
       <div className="relative z-10 flex flex-col h-full w-full overflow-hidden">
@@ -87,7 +88,12 @@ export default function Home() {
               cart={cart}
               onOrderCompleted={() => setCart([])}
               onBrowseServices={() => setActiveTab('services')}
+              onViewStatus={() => setActiveTab('status')}
             />
+          )}
+
+          {activeTab === 'status' && (
+            <StatusScreen onBrowseServices={() => setActiveTab('services')} />
           )}
         </main>
 
