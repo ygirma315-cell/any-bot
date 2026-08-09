@@ -31,8 +31,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
   };
 
   return (
-    <div className="card-flip-scene min-h-[290px]">
-      <div className={`card-flip-inner min-h-[290px] ${isFlipped ? 'is-flipped' : ''}`}>
+    <div className="card-flip-scene min-h-[280px]">
+      <div className={`card-flip-inner min-h-[280px] ${isFlipped ? 'is-flipped' : ''}`}>
         
         {/* ==================== FRONT FACE ==================== */}
         <div className="card-face p-3.5 flex flex-col justify-between border border-slate-200/80 shadow-sm rounded-2xl relative overflow-hidden group hover:shadow-md transition-all duration-300 bg-white/90 backdrop-blur-md">
@@ -44,21 +44,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
           />
 
           <div>
-            {/* Header: Category Badge & Logo */}
-            <div className="flex items-start justify-between gap-1 mb-2.5">
-              <div className="w-11 h-11 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
+            {/* Header: Product Logo */}
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-12 h-12 relative rounded-xl overflow-hidden shadow-xs border border-slate-100 bg-white flex items-center justify-center p-1.5 shrink-0">
                 <Image
                   src={product.logoPath}
                   alt={product.name}
-                  width={38}
-                  height={38}
+                  width={40}
+                  height={40}
                   className="object-contain w-full h-full"
                 />
               </div>
 
-              <span className="text-[10px] font-bold text-slate-600 bg-slate-100/90 px-2 py-0.5 rounded-full border border-slate-200/60">
-                {product.category}
-              </span>
+              {cartQuantity > 0 && (
+                <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/60">
+                  {cartQuantity} in cart
+                </span>
+              )}
             </div>
 
             {/* Product Title & Description */}
@@ -78,18 +80,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               <span className="truncate">{product.warranty}</span>
             </div>
 
-            {/* Price & Quantity Badge */}
+            {/* Price */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-baseline gap-0.5">
                 <span className="text-xs font-semibold text-slate-500">{product.currency}</span>
                 <span className="text-lg font-extrabold text-slate-900">{product.price}</span>
               </div>
-
-              {cartQuantity > 0 && (
-                <span className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/60">
-                  {cartQuantity} in cart
-                </span>
-              )}
             </div>
 
             {/* Action Buttons */}
