@@ -36,41 +36,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  // Protection Guard: If user jumps directly to Payment without selecting products
-  if (cart.length === 0 && !submittedOrder) {
-    return (
-      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-6 min-h-[60vh] animate-fadeIn">
-        {/* Sleek Payment Wallet Icon Tile with Crisp Indigo Border */}
-        <div className="relative w-28 h-28 rounded-3xl bg-white p-2 border-2 border-indigo-200/80 shadow-md flex items-center justify-center">
-          <div className="w-full h-full bg-indigo-50/80 rounded-[22px] border border-indigo-100 flex items-center justify-center relative overflow-hidden text-indigo-600">
-            <Wallet className="w-12 h-12 text-indigo-600 relative z-10" />
-            <Sparkles className="w-5 h-5 text-purple-500 absolute top-3 right-3 animate-pulse" />
-          </div>
-        </div>
-
-        <div className="space-y-1.5 max-w-xs">
-          <h2 className="heading-font text-xl font-extrabold text-slate-900">
-            No Product Selected
-          </h2>
-          <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-            First you should order or choose a product that you are going to pay for.
-          </p>
-        </div>
-
-        {/* High-Contrast Indigo Action Button */}
-        <button
-          type="button"
-          onClick={() => {
-            triggerHaptic('light');
-            onBrowseServices();
-          }}
-          className="px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl border-2 border-indigo-400 shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-        >
-          <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
-          <span>Browse Products to Order</span>
-        </button>
-      </div>
-    );
+  // Early return only if order was already submitted
+  if (submittedOrder) {
+    // rendered submitted order confirmation view below
   }
 
   const handleCopyAccount = (text: string) => {
@@ -254,6 +222,34 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         <p className="text-xs text-slate-500">Confirm delivery email & choose payment method</p>
       </div>
 
+      {/* Prompt Banner when cart is empty */}
+      {cart.length === 0 && (
+        <div className="p-4 bg-indigo-50/90 backdrop-blur-md rounded-2xl border-2 border-indigo-200/80 space-y-3 shadow-xs text-center animate-fadeIn">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-indigo-200 shadow-sm flex items-center justify-center text-indigo-600 mx-auto">
+            <Wallet className="w-6 h-6" />
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="heading-font text-base font-extrabold text-slate-900">No Product Selected</h3>
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed max-w-xs mx-auto">
+              First you should order or choose a product that you are going to pay for. You can preview our supported payment methods below:
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              onBrowseServices();
+            }}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+          >
+            <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
+            <span>Browse Products to Order</span>
+          </button>
+        </div>
+      )}
+
       {/* Non-Editable Customer & Delivery Information Card */}
       <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
@@ -407,14 +403,26 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                   {/* Submit Payment CTA Button */}
                   <button
                     type="button"
-                    disabled={isSubmitting || cart.length === 0}
-                    onClick={handlePaidSubmit}
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      if (cart.length === 0) {
+                        triggerHaptic('light');
+                        onBrowseServices();
+                      } else {
+                        handlePaidSubmit();
+                      }
+                    }}
                     className="btn-pill btn-pill-primary w-full py-4 text-xs font-extrabold shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin text-white" />
                         <span>Submitting Payment...</span>
+                      </>
+                    ) : cart.length === 0 ? (
+                      <>
+                        <ShoppingBag className="w-4 h-4 text-white" />
+                        <span>Choose a Product to Order</span>
                       </>
                     ) : (
                       <>
