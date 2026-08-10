@@ -9,7 +9,8 @@ import { ProductGrid } from '@/components/ProductGrid';
 import { OrderScreen } from '@/components/OrderScreen';
 import { PaymentScreen } from '@/components/PaymentScreen';
 import { StatusScreen } from '@/components/StatusScreen';
-import { getTelegramWebApp } from '@/lib/telegram';
+import { getTelegramWebApp, getTelegramUser } from '@/lib/telegram';
+import { recordVisitor } from '@/lib/store';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment' | 'status'>('services');
@@ -21,6 +22,10 @@ export default function Home() {
     if (webApp) {
       webApp.ready();
       webApp.expand();
+    }
+    const { user } = getTelegramUser();
+    if (user) {
+      recordVisitor(user);
     }
   }, []);
 

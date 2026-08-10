@@ -94,6 +94,92 @@ export function addOrder(order: OrderPayload): void {
   saveStoredOrders(updated);
 }
 
+const VISITORS_KEY = 'buy_ai_store_visitors';
+const ADMIN_PASSWORD_KEY = 'buy_ai_store_admin_password';
+
+export interface VisitorRecord {
+  telegramId: number;
+  username?: string;
+  first_name: string;
+  last_name?: string;
+  lastActive: string;
+  hasOrdered: boolean;
+}
+
+export function getStoredVisitors(): VisitorRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(VISITORS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordVisitor(user: { id: number; username?: string; first_name: string; last_name?: string }, hasOrdered = false): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const visitors = getStoredVisitors();
+    const existingIndex = visitors.findIndex(v => v.telegramId === user.id);
+    const now = new Date().toISOString();
+
+    let updated: VisitorRecord[];
+    if (existingIndex >= 0) {
+      updated = [...visitors];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        username: user.username || updated[existingIndex].username,
+        first_name: user.first_name || updated[existingIndex].first_name,
+        last_name: user.last_name || updated[existingIndex].last_name,
+        lastActive: now,
+        hasOrdered: hasOrdered || updated[existingIndex].hasOrdered
+      };
+    } else {
+      updated = [
+        {
+          telegramId: user.id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          lastActive: now,
+          hasOrdered
+        },
+        ...visitors
+      ];
+    }
+
+    localStorage.setItem(VISITORS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  } catch (e) {
+    console.error('Error recording visitor:', e);
+  }
+}
+
+export function getOnlineUsers24hCount(): number {
+  const visitors = getStoredVisitors();
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return visitors.filter(v => new Date(v.lastActive) >= cutoff).length;
+}
+
+export function getStoredAdminPassword(): string {
+  if (typeof window === 'undefined') return 'admin123';
+  try {
+    return localStorage.getItem(ADMIN_PASSWORD_KEY) || 'admin123';
+  } catch {
+    return 'admin123';
+  }
+}
+
+export function saveStoredAdminPassword(password: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ADMIN_PASSWORD_KEY, password);
+    window.dispatchEvent(new Event('ai_store_admin_password_updated'));
+  } catch (e) {
+    console.error('Error saving admin password:', e);
+  }
+}
+
 export function updateOrderStatus(orderId: string, status: OrderPayload['status']): void {
   const currentOrders = getStoredOrders();
   const updated = currentOrders.map(order => {
@@ -104,3 +190,4 @@ export function updateOrderStatus(orderId: string, status: OrderPayload['status'
   });
   saveStoredOrders(updated);
 }
+

@@ -36,6 +36,40 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
+  // Protection Guard: If user jumps directly to Payment without selecting products
+  if (cart.length === 0 && !submittedOrder) {
+    return (
+      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-5 min-h-[60vh] animate-fadeIn">
+        <div className="w-20 h-20 rounded-3xl bg-orange-50 border-2 border-orange-200 flex items-center justify-center text-[#FF6B00] shadow-sm">
+          <Info className="w-10 h-10 animate-bounce" />
+        </div>
+
+        <div className="space-y-2 max-w-sm">
+          <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-[#FF6B00] font-extrabold text-xs">
+            Product Selection Required
+          </span>
+          <h2 className="heading-font text-lg font-extrabold text-slate-900">
+            No Product Selected
+          </h2>
+          <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+            First you should order or choose a product that you are going to pay for.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic('light');
+            onBrowseServices();
+          }}
+          className="btn-pill btn-pill-primary px-7 py-3.5 text-xs font-extrabold shadow-md hover:shadow-lg bg-[#FF6B00] text-white flex items-center gap-2"
+        >
+          <span>Browse Products to Order</span>
+        </button>
+      </div>
+    );
+  }
+
   const handleCopyAccount = (text: string) => {
     triggerHaptic('light');
     navigator.clipboard.writeText(text);

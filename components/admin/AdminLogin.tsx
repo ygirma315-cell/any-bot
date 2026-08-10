@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Lock, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
 
+import { getStoredAdminPassword } from '@/lib/store';
+
 interface AdminLoginProps {
   onLoginSuccess: () => void;
 }
@@ -20,12 +22,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    if (username.trim() === 'admin' && password === 'admin123') {
+    const currentPassword = getStoredAdminPassword();
+
+    if (username.trim().toLowerCase() === 'admin' && password === currentPassword) {
       setError('');
       sessionStorage.setItem('ai_store_admin_authenticated', 'true');
       onLoginSuccess();
     } else {
-      setError('Invalid username or password. (Default: admin / admin123)');
+      setError(`Invalid username or password.`);
     }
   };
 

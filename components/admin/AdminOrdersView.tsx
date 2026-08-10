@@ -99,132 +99,128 @@ export const AdminOrdersView: React.FC = () => {
         </div>
       )}
 
-      {/* Orders List */}
+      {/* Orders Table */}
       {filteredOrders.length > 0 ? (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => {
-            const isPending = order.status === 'Pending' || order.status === 'Payment Submitted';
-            const isAccepted = order.status === 'Accepted' || order.status === 'Completed' || order.status === 'Payment Confirmed';
-            const isRejected = order.status === 'Rejected' || order.status === 'Cancelled';
-            const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
+        <div className="p-5 bg-white/95 rounded-2xl border border-slate-200/90 space-y-4 shadow-sm">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[850px]">
+              <thead>
+                <tr className="border-b border-slate-100 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-3">ORDER ID</th>
+                  <th className="py-3 px-3">CUSTOMER NAME</th>
+                  <th className="py-3 px-3">TELEGRAM USERNAME</th>
+                  <th className="py-3 px-3">TELEGRAM ID</th>
+                  <th className="py-3 px-3">DELIVERY EMAIL</th>
+                  <th className="py-3 px-3">ITEMS & PRICE</th>
+                  <th className="py-3 px-3">STATUS</th>
+                  <th className="py-3 px-3 text-right">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                {filteredOrders.map((order) => {
+                  const isPending = order.status === 'Pending' || order.status === 'Payment Submitted';
+                  const isAccepted = order.status === 'Accepted' || order.status === 'Completed' || order.status === 'Payment Confirmed';
+                  const isRejected = order.status === 'Rejected' || order.status === 'Cancelled';
+                  const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : 'No handle';
+                  const customerName = `${order.telegramUser.first_name || 'Customer'} ${order.telegramUser.last_name || ''}`.trim();
 
-            return (
-              <div
-                key={order.orderId}
-                className="p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 space-y-4 shadow-sm transition-all hover:shadow-md hover:border-orange-200"
-              >
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-extrabold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                      {order.orderId}
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">{order.timestamp}</span>
-                  </div>
+                  return (
+                    <tr key={order.orderId} className="hover:bg-slate-50/80 transition-colors">
+                      {/* Order ID & Time */}
+                      <td className="py-3.5 px-3">
+                        <span className="font-mono text-xs font-extrabold text-slate-900 block">
+                          {order.orderId}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-semibold">{order.timestamp}</span>
+                      </td>
 
-                  <div>
-                    {isPending && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                        <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" /> Pending Payment Review
-                      </span>
-                    )}
-                    {isAccepted && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Accepted & Product Sent
-                      </span>
-                    )}
-                    {isRejected && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
-                        <XCircle className="w-3.5 h-3.5 text-rose-600" /> Rejected
-                      </span>
-                    )}
-                  </div>
-                </div>
+                      {/* Customer Name */}
+                      <td className="py-3.5 px-3 font-bold text-slate-900">
+                        {customerName}
+                      </td>
 
-                {/* Customer Details Box & Pending Alert */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Customer Information Card */}
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Telegram Username:</span>
-                      <strong className="text-orange-600 font-extrabold">{userHandle}</strong>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Telegram User ID:</span>
-                      <code className="font-mono text-slate-900 font-bold">{order.telegramUser.id}</code>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span>Payment Method:</span>
-                      <strong className="text-slate-900 font-bold">{order.paymentMethod.name}</strong>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600 pt-1.5 border-t border-slate-200">
-                      <span className="font-bold text-slate-700">Total Paid:</span>
-                      <span className="heading-font text-sm font-extrabold text-emerald-600">${order.total.toFixed(2)} USD</span>
-                    </div>
-                  </div>
+                      {/* Telegram Username */}
+                      <td className="py-3.5 px-3">
+                        {order.telegramUser.username ? (
+                          <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
+                            {userHandle}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-semibold">{userHandle}</span>
+                        )}
+                      </td>
 
-                  {/* Admin Action Notification Alert */}
-                  <div className="p-3.5 bg-orange-50/70 rounded-xl border border-orange-200/80 space-y-2 text-xs flex flex-col justify-between">
-                    <div className="space-y-1">
-                      <p className="font-bold text-orange-950 flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
-                        <span>Pending Payment Verification</span>
-                      </p>
-                      <p className="text-[11.5px] text-slate-700 leading-snug">
-                        Telegram handle <strong className="text-slate-900">{userHandle}</strong> (ID: {order.telegramUser.id}) is waiting for payment confirmation. Accept or reject below.
-                      </p>
-                    </div>
+                      {/* Telegram ID */}
+                      <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
+                        <code>{order.telegramUser.id}</code>
+                      </td>
 
-                    {isAccepted && (
-                      <div className="pt-2 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-                        <Send className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Product sent via email / Telegram (UI Simulation Active)</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Ordered Items Table */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Ordered Services</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
-                        <div>
-                          <p className="font-bold text-slate-900">{item.name} ×{item.quantity}</p>
-                          <p className="text-[10px] text-emerald-600 font-semibold">{item.warranty}</p>
+                      {/* Delivery Email Address */}
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-1 font-mono font-bold text-slate-900">
+                          <Mail className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                          <span className="truncate max-w-[180px]">{order.telegramUser.username ? `${order.telegramUser.username}@example.com` : 'customer@example.com'}</span>
                         </div>
-                        <span className="font-extrabold text-slate-900">${(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                      </td>
 
-                {/* Accept / Reject Action Buttons */}
-                {isPending && (
-                  <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleRejectOrder(order)}
-                      className="flex-1 py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
-                    >
-                      <XCircle className="w-4 h-4 text-rose-600" />
-                      <span>Reject Payment</span>
-                    </button>
+                      {/* Items & Total Price */}
+                      <td className="py-3.5 px-3">
+                        <p className="font-extrabold text-emerald-600">${order.total.toFixed(2)} USD</p>
+                        <p className="text-[10.5px] text-slate-500 truncate max-w-[160px]">
+                          {order.items.map(i => `${i.name} (${i.quantity})`).join(', ')}
+                        </p>
+                      </td>
 
-                    <button
-                      type="button"
-                      onClick={() => handleAcceptOrder(order)}
-                      className="flex-1 py-3 px-4 bg-[#FF6B00] hover:bg-[#E66000] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                      <span>Accept Payment & Release Product</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      {/* Status */}
+                      <td className="py-3.5 px-3">
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200">
+                            <Clock className="w-3 h-3 text-amber-600 animate-spin" /> Pending
+                          </span>
+                        )}
+                        {isAccepted && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
+                          </span>
+                        )}
+                        {isRejected && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">
+                            <XCircle className="w-3 h-3 text-rose-600" /> Rejected
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-3 text-right">
+                        {isPending ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptOrder(order)}
+                              className="px-2.5 py-1.5 bg-[#FF6B00] hover:bg-[#E66000] text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Accept</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectOrder(order)}
+                              className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-slate-400">Processed</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-center py-16 bg-white/80 rounded-2xl border border-slate-200 p-6 space-y-2">

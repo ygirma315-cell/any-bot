@@ -155,14 +155,14 @@ export const OrderScreen: React.FC<OrderScreenProps> = ({
             >
               {/* Top row: Logo, Info & Quantity controls */}
               <div className="flex items-center justify-between gap-3">
-                {/* Logo */}
-                <div className="w-12 h-12 relative rounded-xl bg-white p-1 border border-slate-100 shadow-xs flex items-center justify-center shrink-0">
+                {/* Logo Tile */}
+                <div className="w-12 h-12 relative rounded-2xl bg-white p-1.5 border-2 border-slate-200/90 shadow-sm flex items-center justify-center shrink-0 overflow-hidden">
                   <Image
                     src={product.logoPath || '/assets/products/chatgpt.png'}
                     alt={product.name}
-                    width={40}
-                    height={40}
-                    className="object-contain w-full h-full"
+                    width={36}
+                    height={36}
+                    className="object-contain w-full h-full max-w-[36px] max-h-[36px] mx-auto my-auto"
                   />
                 </div>
 

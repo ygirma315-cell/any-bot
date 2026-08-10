@@ -37,7 +37,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
       <div className={`card-flip-inner min-h-[300px] ${isFlipped ? 'is-flipped' : ''}`}>
         
         {/* ==================== FRONT FACE ==================== */}
-        <div className="card-face p-4 flex flex-col justify-between border border-slate-200/80 shadow-xs rounded-2xl relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-white/90 backdrop-blur-md">
+        <div
+          onClick={handleFlip}
+          className="card-face p-4 flex flex-col justify-between border border-slate-200/80 shadow-xs rounded-2xl relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-white/90 backdrop-blur-md cursor-pointer select-none"
+        >
           
           {/* Subtle Ambient Accent Glow Reflection */}
           <div
