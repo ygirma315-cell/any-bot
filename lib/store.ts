@@ -191,3 +191,29 @@ export function updateOrderStatus(orderId: string, status: OrderPayload['status'
   saveStoredOrders(updated);
 }
 
+export function clearAllOrders(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ORDERS_KEY);
+    window.dispatchEvent(new Event('ai_store_orders_updated'));
+  } catch (e) {
+    console.error('Error clearing orders:', e);
+  }
+}
+
+export function clearAllVisitors(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(VISITORS_KEY);
+    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  } catch (e) {
+    console.error('Error clearing visitors:', e);
+  }
+}
+
+export function clearAllStoreHistory(): void {
+  clearAllOrders();
+  clearAllVisitors();
+}
+
+

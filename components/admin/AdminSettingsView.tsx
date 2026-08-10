@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getStoredAdminPassword, saveStoredAdminPassword } from '@/lib/store';
-import { Settings, Lock, CheckCircle2, AlertCircle, KeyRound, Shield } from 'lucide-react';
+import { getStoredAdminPassword, saveStoredAdminPassword, clearAllStoreHistory } from '@/lib/store';
+import { Settings, Lock, CheckCircle2, AlertCircle, KeyRound, Shield, Trash2, RefreshCw } from 'lucide-react';
 
 export const AdminSettingsView: React.FC = () => {
   const [oldPassword, setOldPassword] = useState<string>('');
@@ -45,16 +45,23 @@ export const AdminSettingsView: React.FC = () => {
     setConfirmPassword('');
   };
 
+  const handleClearAllHistory = () => {
+    if (confirm('DANGER: This will delete ALL order history, customer logs, and visitor user data to start fresh. Proceed?')) {
+      clearAllStoreHistory();
+      setStatusMsg({ type: 'success', message: 'All order history, user logs, and visitor data have been completely wiped. The store is now reset fresh!' });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn pb-12 max-w-3xl">
       {/* Header */}
       <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(15,23,42,0.04)] space-y-2">
         <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
           <Settings className="w-5 h-5 text-[#FF6B00]" />
-          Admin Security Settings
+          Admin Security & System Settings
         </h2>
         <p className="text-xs text-slate-500 font-medium">
-          Manage system security and update your admin authentication credentials.
+          Manage system security, update authentication passwords, and reset store logs.
         </p>
       </div>
 
@@ -153,6 +160,32 @@ export const AdminSettingsView: React.FC = () => {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Clear All History & Data Wipe Card */}
+      <div className="p-6 bg-white rounded-2xl border border-rose-200/80 shadow-[0_2px_10px_rgba(15,23,42,0.04)] space-y-4">
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+            <Trash2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900">Clear All History & Restart Fresh</h3>
+            <p className="text-xs text-slate-500 font-medium">Delete all order records, user logs, and visitor data for a clean reset.</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+          If you want to clear test data or start with a fresh slate, click below to wipe all order histories and visitor records for all users.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleClearAllHistory}
+          className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span>Wipe All History & Restart Store</span>
+        </button>
       </div>
     </div>
   );

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { OrderPayload } from '@/lib/bot';
-import { getStoredOrders, updateOrderStatus } from '@/lib/store';
-import { Clock, CheckCircle2, XCircle, User, Mail, Send, AlertTriangle, ShieldCheck, RefreshCw, Sparkles, Filter } from 'lucide-react';
+import { getStoredOrders, updateOrderStatus, clearAllOrders } from '@/lib/store';
+import { Clock, CheckCircle2, XCircle, User, Mail, Send, AlertTriangle, ShieldCheck, RefreshCw, Sparkles, Filter, Trash2 } from 'lucide-react';
 
 export const AdminOrdersView: React.FC = () => {
   const [orders, setOrders] = useState<OrderPayload[]>([]);
@@ -12,6 +12,15 @@ export const AdminOrdersView: React.FC = () => {
 
   const loadOrders = () => {
     setOrders(getStoredOrders());
+  };
+
+  const handleClearHistory = () => {
+    if (confirm('Are you sure you want to clear all order history? This will delete all order logs.')) {
+      clearAllOrders();
+      loadOrders();
+      setToastMessage('🗑️ All order history cleared!');
+      setTimeout(() => setToastMessage(null), 3000);
+    }
   };
 
   useEffect(() => {
@@ -87,6 +96,16 @@ export const AdminOrdersView: React.FC = () => {
             title="Refresh orders"
           >
             <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-all shrink-0 flex items-center gap-1"
+            title="Clear all orders history"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Orders</span>
           </button>
         </div>
       </div>
