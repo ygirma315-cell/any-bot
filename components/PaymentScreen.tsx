@@ -76,6 +76,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
       const payload: OrderPayload = {
         orderId: generatedOrderId,
+        deliveryEmail: userEmail.trim(),
         telegramUser: updatedTelegramUser,
         items: cart.map((item) => ({
           id: item.product.id,

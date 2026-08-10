@@ -433,11 +433,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
                   <button
                     type="button"
-                    onClick={() => setActiveTab('settings')}
-                    className="p-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
+                    onClick={() => setActiveTab('orders')}
+                    className="p-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
                   >
-                    <Settings className="w-4 h-4" />
-                    <span>Change Admin Password</span>
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>View Orders</span>
                   </button>
                 </div>
               </div>

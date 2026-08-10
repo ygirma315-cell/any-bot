@@ -125,14 +125,12 @@ export const AdminOrdersView: React.FC = () => {
             <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
                 <tr className="border-b border-slate-100 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-3">ORDER ID</th>
-                  <th className="py-3 px-3">CUSTOMER NAME</th>
+                  <th className="py-3 px-3">ITEM / PRODUCT</th>
                   <th className="py-3 px-3">TELEGRAM USERNAME</th>
                   <th className="py-3 px-3">TELEGRAM ID</th>
                   <th className="py-3 px-3">DELIVERY EMAIL</th>
-                  <th className="py-3 px-3">ITEMS & PRICE</th>
-                  <th className="py-3 px-3">STATUS</th>
-                  <th className="py-3 px-3 text-right">ACTIONS</th>
+                  <th className="py-3 px-3">PRICE</th>
+                  <th className="py-3 px-3 text-right">STATUS / ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
@@ -141,24 +139,19 @@ export const AdminOrdersView: React.FC = () => {
                   const isAccepted = order.status === 'Accepted' || order.status === 'Completed' || order.status === 'Payment Confirmed';
                   const isRejected = order.status === 'Rejected' || order.status === 'Cancelled';
                   const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : 'No handle';
-                  const customerName = `${order.telegramUser.first_name || 'Customer'} ${order.telegramUser.last_name || ''}`.trim();
+                  const deliveryEmail = order.deliveryEmail || (order.telegramUser.username ? `${order.telegramUser.username}@example.com` : 'customer@example.com');
 
                   return (
                     <tr key={order.orderId} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Order ID & Time */}
+                      {/* 1. Item / Product */}
                       <td className="py-3.5 px-3">
-                        <span className="font-mono text-xs font-extrabold text-slate-900 block">
-                          {order.orderId}
+                        <span className="font-extrabold text-slate-900 block truncate max-w-[200px]">
+                          {order.items.map(i => `${i.name} (×${i.quantity})`).join(', ')}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-semibold">{order.timestamp}</span>
+                        <span className="font-mono text-[10.5px] text-slate-400 font-semibold block">{order.orderId}</span>
                       </td>
 
-                      {/* Customer Name */}
-                      <td className="py-3.5 px-3 font-bold text-slate-900">
-                        {customerName}
-                      </td>
-
-                      {/* Telegram Username */}
+                      {/* 2. Telegram Username */}
                       <td className="py-3.5 px-3">
                         {order.telegramUser.username ? (
                           <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
@@ -169,47 +162,25 @@ export const AdminOrdersView: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Telegram ID */}
+                      {/* 3. Telegram ID */}
                       <td className="py-3.5 px-3 font-mono font-bold text-slate-800">
                         <code>{order.telegramUser.id}</code>
                       </td>
 
-                      {/* Delivery Email Address */}
+                      {/* 4. Delivery Email Address */}
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-1 font-mono font-bold text-slate-900">
                           <Mail className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                          <span className="truncate max-w-[180px]">{order.telegramUser.username ? `${order.telegramUser.username}@example.com` : 'customer@example.com'}</span>
+                          <span className="truncate max-w-[180px]">{deliveryEmail}</span>
                         </div>
                       </td>
 
-                      {/* Items & Total Price */}
+                      {/* 5. Total Price */}
                       <td className="py-3.5 px-3">
-                        <p className="font-extrabold text-emerald-600">${order.total.toFixed(2)} USD</p>
-                        <p className="text-[10.5px] text-slate-500 truncate max-w-[160px]">
-                          {order.items.map(i => `${i.name} (${i.quantity})`).join(', ')}
-                        </p>
+                        <span className="font-black text-emerald-600">${order.total.toFixed(2)} USD</span>
                       </td>
 
-                      {/* Status */}
-                      <td className="py-3.5 px-3">
-                        {isPending && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-200">
-                            <Clock className="w-3 h-3 text-amber-600 animate-spin" /> Pending
-                          </span>
-                        )}
-                        {isAccepted && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
-                          </span>
-                        )}
-                        {isRejected && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">
-                            <XCircle className="w-3 h-3 text-rose-600" /> Rejected
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
+                      {/* 6. Status / Action (Accept / Reject) */}
                       <td className="py-3.5 px-3 text-right">
                         {isPending ? (
                           <div className="flex items-center justify-end gap-1.5">
@@ -230,8 +201,14 @@ export const AdminOrdersView: React.FC = () => {
                               <span>Reject</span>
                             </button>
                           </div>
+                        ) : isAccepted ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
+                          </span>
                         ) : (
-                          <span className="text-[11px] font-semibold text-slate-400">Processed</span>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">
+                            <XCircle className="w-3 h-3 text-rose-600" /> Rejected
+                          </span>
                         )}
                       </td>
                     </tr>

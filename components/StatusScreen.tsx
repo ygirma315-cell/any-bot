@@ -117,13 +117,19 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
                 </div>
               </div>
 
-              {/* Order User info */}
-              <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                  <User className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>{order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name}</span>
+              {/* Order User & Delivery Email info */}
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-extrabold text-slate-900">
+                    <User className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>{order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name}</span>
+                  </div>
+                  <span className="text-[10.5px] text-slate-400 font-semibold">{order.timestamp}</span>
                 </div>
-                <span className="text-[10.5px] text-slate-400">{order.timestamp}</span>
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 pt-1 border-t border-slate-200/60">
+                  <Mail className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
+                  <span>Delivery Email: <strong className="text-slate-900 font-bold">{order.deliveryEmail || (order.telegramUser.username ? `${order.telegramUser.username}@example.com` : 'customer@example.com')}</strong></span>
+                </div>
               </div>
 
               {/* Product items */}

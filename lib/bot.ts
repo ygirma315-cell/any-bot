@@ -1,5 +1,6 @@
 export interface OrderPayload {
   orderId: string;
+  deliveryEmail?: string;
   telegramUser: {
     id: number;
     username?: string;
