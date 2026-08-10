@@ -54,31 +54,32 @@ export const OrderScreen: React.FC<OrderScreenProps> = ({
 
   if (cart.length === 0) {
     return (
-      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-5 min-h-[60vh]">
-        {/* Empty State Illustration */}
-        <div className="relative w-28 h-28 rounded-3xl bg-gradient-to-tr from-slate-100 via-orange-50 to-amber-50 p-[2px] shadow-sm flex items-center justify-center">
-          <div className="w-full h-full bg-white rounded-[22px] flex items-center justify-center relative overflow-hidden">
-            <ShoppingBag className="w-12 h-12 text-slate-300 relative z-10" />
-            <Sparkles className="w-5 h-5 text-orange-400 absolute top-4 right-4 animate-pulse" />
+      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-6 min-h-[60vh] animate-fadeIn">
+        {/* Empty State Card Illustration with Crisp Border */}
+        <div className="relative w-32 h-32 rounded-3xl bg-white p-2 border-2 border-orange-200/80 shadow-md flex items-center justify-center">
+          <div className="w-full h-full bg-orange-50/70 rounded-[22px] border border-orange-100 flex items-center justify-center relative overflow-hidden">
+            <ShoppingBag className="w-14 h-14 text-[#FF6B00] relative z-10" />
+            <Sparkles className="w-5 h-5 text-amber-500 absolute top-3 right-3 animate-pulse" />
           </div>
         </div>
 
-        <div>
-          <h2 className="heading-font text-lg font-bold text-slate-900">Your order is empty</h2>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
+        <div className="space-y-1.5 max-w-xs">
+          <h2 className="heading-font text-xl font-extrabold text-slate-900">Your order is empty</h2>
+          <p className="text-xs font-semibold text-slate-600 leading-relaxed">
             Choose a premium digital AI service to get started with instant delivery.
           </p>
         </div>
 
+        {/* High-Contrast Solid Orange Button with Border */}
         <button
           type="button"
           onClick={() => {
             triggerHaptic('light');
             onBrowseServices();
           }}
-          className="btn-pill btn-pill-action px-6 py-3 text-xs font-bold shadow-md hover:shadow-lg transition-all"
+          className="px-7 py-3.5 bg-[#FF6B00] hover:bg-[#E66000] text-white font-extrabold text-xs rounded-2xl border-2 border-orange-400 shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
         >
-          <ShoppingBag className="w-4 h-4 text-orange-500" />
+          <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
           <span>Browse Services</span>
         </button>
       </div>

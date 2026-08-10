@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Store, ShoppingBag, CreditCard, Clock } from 'lucide-react';
+import { Sparkles, ShoppingBag, Wallet, Activity, Bot, ShieldCheck } from 'lucide-react';
 import { triggerHaptic } from '@/lib/telegram';
 import { getStoredOrders } from '@/lib/store';
 
@@ -31,14 +31,37 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
     id: 'services' | 'order' | 'payment' | 'status';
     label: string;
     icon: React.ComponentType<{ className?: string }>;
+    gradient: string;
     badge?: number;
   }
 
   const tabs: NavTab[] = [
-    { id: 'services', label: 'Services', icon: Store },
-    { id: 'order', label: 'Order', icon: ShoppingBag, badge: cartCount },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
-    { id: 'status', label: 'Status', icon: Clock, badge: pendingCount }
+    {
+      id: 'services',
+      label: 'Services',
+      icon: Bot,
+      gradient: 'from-blue-600 to-cyan-500'
+    },
+    {
+      id: 'order',
+      label: 'Order',
+      icon: ShoppingBag,
+      gradient: 'from-[#FF6B00] to-amber-500',
+      badge: cartCount
+    },
+    {
+      id: 'payment',
+      label: 'Payment',
+      icon: Wallet,
+      gradient: 'from-emerald-600 to-teal-500'
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      icon: Activity,
+      gradient: 'from-purple-600 to-indigo-600',
+      badge: pendingCount
+    }
   ];
 
   const handleTabClick = (tabId: 'services' | 'order' | 'payment' | 'status') => {
@@ -47,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
   };
 
   return (
-    <nav className="relative z-30 shrink-0 w-full px-3 py-2 bg-white/90 backdrop-blur-xl border-t border-slate-200/70 shadow-lg">
+    <nav className="relative z-30 shrink-0 w-full px-3 py-2 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
       <div className="relative flex items-center justify-around max-w-md mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -57,27 +80,41 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id as 'services' | 'order' | 'payment' | 'status')}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-300 ${
-                isActive ? 'text-indigo-600 font-bold' : 'text-slate-500 font-medium hover:text-slate-800'
+              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-300 ${
+                isActive ? 'scale-105' : 'opacity-70 hover:opacity-100'
               }`}
             >
-              {/* Active Indicator Backdrop Pill */}
+              {/* Active Indicator Glow Background */}
               {isActive && (
-                <div className="absolute inset-0 bg-indigo-50/90 rounded-2xl border border-indigo-100/80 shadow-xs transition-all duration-300 animate-fadeIn" />
+                <div className="absolute inset-0 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-xs transition-all duration-300 animate-fadeIn" />
               )}
 
-              <div className="relative z-10 flex flex-col items-center">
+              <div className="relative z-10 flex flex-col items-center gap-1">
                 <div className="relative">
-                  <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
-                  
+                  {/* High-Vibe Icon Tile */}
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                      isActive
+                        ? `bg-gradient-to-tr ${tab.gradient} text-white shadow-md scale-110`
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 stroke-[2.2]" />
+                  </div>
+
                   {/* Badge count */}
                   {tab.badge && tab.badge > 0 ? (
-                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[9.5px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-md animate-bounce">
                       {tab.badge}
                     </span>
                   ) : null}
                 </div>
-                <span className="text-[10.5px] tracking-tight mt-1">{tab.label}</span>
+
+                <span className={`text-[10.5px] font-extrabold tracking-tight transition-colors ${
+                  isActive ? 'text-slate-900' : 'text-slate-500'
+                }`}>
+                  {tab.label}
+                </span>
               </div>
             </button>
           );
