@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    // Optional secret token verification to prevent unauthorized webhook calls
+    const secretToken = process.env.TELEGRAM_SECRET_TOKEN;
+    if (secretToken) {
+      const headerSecret = request.headers.get('x-telegram-bot-api-secret-token');
+      if (headerSecret !== secretToken) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
     const update = await request.json();
 
     if (update?.message?.text === '/start' || update?.message?.text?.startsWith('/start')) {
@@ -42,3 +51,4 @@ export async function POST(request: Request) {
 export async function GET() {
   return NextResponse.json({ status: 'Telegram Bot Webhook Endpoint Active' });
 }
+
