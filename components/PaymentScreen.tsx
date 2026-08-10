@@ -8,7 +8,7 @@ import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
 import { addOrder } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
-import { Copy, Check, ShieldCheck, ShieldAlert, CheckCircle2, Loader2, Sparkles, Mail, Send, Lock, FileText, Info } from 'lucide-react';
+import { Copy, Check, ShieldCheck, ShieldAlert, CheckCircle2, Loader2, Sparkles, Mail, Send, Lock, FileText, Info, Wallet, ShoppingBag } from 'lucide-react';
 
 interface PaymentScreenProps {
   cart: { product: Product; quantity: number }[];
@@ -39,31 +39,34 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   // Protection Guard: If user jumps directly to Payment without selecting products
   if (cart.length === 0 && !submittedOrder) {
     return (
-      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-5 min-h-[60vh] animate-fadeIn">
-        <div className="w-20 h-20 rounded-3xl bg-orange-50 border-2 border-orange-200 flex items-center justify-center text-[#FF6B00] shadow-sm">
-          <Info className="w-10 h-10 animate-bounce" />
+      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-6 min-h-[60vh] animate-fadeIn">
+        {/* Sleek Payment Wallet Icon Tile with Crisp Indigo Border */}
+        <div className="relative w-28 h-28 rounded-3xl bg-white p-2 border-2 border-indigo-200/80 shadow-md flex items-center justify-center">
+          <div className="w-full h-full bg-indigo-50/80 rounded-[22px] border border-indigo-100 flex items-center justify-center relative overflow-hidden text-indigo-600">
+            <Wallet className="w-12 h-12 text-indigo-600 relative z-10" />
+            <Sparkles className="w-5 h-5 text-purple-500 absolute top-3 right-3 animate-pulse" />
+          </div>
         </div>
 
-        <div className="space-y-2 max-w-sm">
-          <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-[#FF6B00] font-extrabold text-xs">
-            Product Selection Required
-          </span>
-          <h2 className="heading-font text-lg font-extrabold text-slate-900">
+        <div className="space-y-1.5 max-w-xs">
+          <h2 className="heading-font text-xl font-extrabold text-slate-900">
             No Product Selected
           </h2>
-          <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+          <p className="text-xs font-semibold text-slate-600 leading-relaxed">
             First you should order or choose a product that you are going to pay for.
           </p>
         </div>
 
+        {/* High-Contrast Indigo Action Button */}
         <button
           type="button"
           onClick={() => {
             triggerHaptic('light');
             onBrowseServices();
           }}
-          className="btn-pill btn-pill-primary px-7 py-3.5 text-xs font-extrabold shadow-md hover:shadow-lg bg-[#FF6B00] text-white flex items-center gap-2"
+          className="px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl border-2 border-indigo-400 shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
         >
+          <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
           <span>Browse Products to Order</span>
         </button>
       </div>
