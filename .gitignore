@@ -13,10 +13,8 @@
 
 # Environment variables & secrets (NEVER COMMIT)
 .env
-.env*.local
-.env.development
-.env.production
-.env.staging
+.env.*
+!.env.example
 
 # Debug logs
 npm-debug.log*
