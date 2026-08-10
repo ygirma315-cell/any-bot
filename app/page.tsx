@@ -9,6 +9,7 @@ import { ProductGrid } from '@/components/ProductGrid';
 import { OrderScreen } from '@/components/OrderScreen';
 import { PaymentScreen } from '@/components/PaymentScreen';
 import { StatusScreen } from '@/components/StatusScreen';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import { getTelegramWebApp, getTelegramUser } from '@/lib/telegram';
 import { recordVisitor } from '@/lib/store';
 
@@ -65,6 +66,9 @@ export default function Home() {
 
   return (
     <div className="app-viewport flex flex-col h-screen overflow-hidden">
+      {/* Animated Brand Loading Screen Splash */}
+      <LoadingScreen />
+
       {/* Dynamic Ambient RGB Lighting System */}
       <RgbAtmosphere activeTab={activeTab === 'status' ? 'services' : activeTab} />
 
