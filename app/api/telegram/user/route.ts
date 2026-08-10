@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_API_ID;
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
     if (!botToken || !adminChatId) {
       return NextResponse.json({
