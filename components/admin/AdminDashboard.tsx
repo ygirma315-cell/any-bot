@@ -42,6 +42,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Touch swipe left to close sidebar handler
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const currentX = e.touches[0].clientX;
+    const diffX = touchStartX - currentX;
+    if (diffX > 50) {
+      setIsSidebarOpen(false);
+      setTouchStartX(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartX(null);
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   const refreshData = () => {
     const prods = getStoredProducts();
     const cats = getStoredCategories();
@@ -119,11 +147,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
 
   return (
-    <div className="min-h-screen w-full bg-[#F6F8FB] text-slate-900 flex font-sans overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#F6F8FB] text-slate-900 flex font-sans overflow-x-hidden relative">
       
+      {/* Dark Mobile Backdrop Overlay - Click outside on black space to close sidebar */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-35 bg-slate-950/60 backdrop-blur-xs md:hidden animate-fadeIn"
+          title="Click to close sidebar menu"
+        />
+      )}
+
       {/* ==================== LEFT SIDEBAR NAVIGATION ==================== */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white flex flex-col justify-between border-r border-slate-800 transition-all duration-300 transform ${
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 bg-slate-900 text-white flex flex-col justify-between border-r border-slate-800 transition-all duration-300 transform shadow-2xl md:shadow-none ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -164,7 +204,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 1. Dashboard */}
             <button
               type="button"
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabChange('dashboard')}
               className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'dashboard'
                   ? 'bg-[#FF6B00] text-white shadow-md'
@@ -178,7 +218,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 2. Orders */}
             <button
               type="button"
-              onClick={() => setActiveTab('orders')}
+              onClick={() => handleTabChange('orders')}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'orders'
                   ? 'bg-[#FF6B00] text-white shadow-md'
@@ -199,7 +239,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 3. Products */}
             <button
               type="button"
-              onClick={() => setActiveTab('products')}
+              onClick={() => handleTabChange('products')}
               className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'products'
                   ? 'bg-[#FF6B00] text-white shadow-md'
@@ -213,7 +253,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 4. Categories */}
             <button
               type="button"
-              onClick={() => setActiveTab('categories')}
+              onClick={() => handleTabChange('categories')}
               className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'categories'
                   ? 'bg-[#FF6B00] text-white shadow-md'
@@ -227,7 +267,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 5. Online Users & Visitors */}
             <button
               type="button"
-              onClick={() => setActiveTab('users')}
+              onClick={() => handleTabChange('users')}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'users'
                   ? 'bg-[#FF6B00] text-white shadow-md'
@@ -246,7 +286,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             {/* 6. Settings */}
             <button
               type="button"
-              onClick={() => setActiveTab('settings')}
+              onClick={() => handleTabChange('settings')}
               className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
                 activeTab === 'settings'
                   ? 'bg-[#FF6B00] text-white shadow-md'
