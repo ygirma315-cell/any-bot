@@ -30,7 +30,15 @@ export const AdminOrdersView: React.FC = () => {
     loadOrders();
     const handleUpdate = () => loadOrders();
     window.addEventListener('ai_store_orders_updated', handleUpdate);
-    return () => window.removeEventListener('ai_store_orders_updated', handleUpdate);
+
+    const interval = setInterval(() => {
+      loadOrders();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('ai_store_orders_updated', handleUpdate);
+      clearInterval(interval);
+    };
   }, []);
 
 

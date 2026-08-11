@@ -58,9 +58,9 @@ export async function POST(request: Request) {
           total: orderPayload.total,
           payment_method: orderPayload.paymentMethod,
           status: orderPayload.status
-        }, { onConflict: 'order_id' }).select('id').single();
+        }, { onConflict: 'order_id' }).select('id').maybeSingle();
 
-        if (orderErr) {
+        if (orderErr || !insertedOrder) {
           console.warn('First order upsert attempt error, retrying without FK:', orderErr);
           const retry = await dbClient.from('orders').upsert({
             order_id: orderPayload.orderId,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
             total: orderPayload.total,
             payment_method: orderPayload.paymentMethod,
             status: orderPayload.status
-          }, { onConflict: 'order_id' }).select('id').single();
+          }, { onConflict: 'order_id' }).select('id').maybeSingle();
           insertedOrder = retry.data;
           orderErr = retry.error;
         }

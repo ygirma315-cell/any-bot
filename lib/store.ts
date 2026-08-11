@@ -311,7 +311,7 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   }
 }
 
-// Sequential Order ID Generator (1, 2, 3...)
+// Unique Sequential Order ID Generator (#ORD-1001-492, #ORD-1002-817...)
 export async function generateSequentialOrderId(): Promise<string> {
   const currentOrders = getStoredOrders();
   let nextNum = currentOrders.length + 1;
@@ -319,15 +319,16 @@ export async function generateSequentialOrderId(): Promise<string> {
   if (isSupabaseConfigured && supabase) {
     try {
       const { count, error } = await supabase.from('orders').select('*', { count: 'exact', head: true });
-      if (!error && typeof count === 'number') {
+      if (!error && typeof count === 'number' && count > 0) {
         nextNum = count + 1;
       }
     } catch {
-      // fallback to local count
+      // fallback
     }
   }
 
-  return `#${nextNum}`;
+  const randomSuffix = Math.floor(100 + Math.random() * 900);
+  return `#ORD-${1000 + nextNum}-${randomSuffix}`;
 }
 
 export function addOrder(order: OrderPayload): void {
@@ -364,9 +365,9 @@ export function addOrder(order: OrderPayload): void {
           total: order.total,
           payment_method: order.paymentMethod,
           status: order.status
-        }, { onConflict: 'order_id' }).select('id').single();
+        }, { onConflict: 'order_id' }).select('id').maybeSingle();
 
-        if (orderErr) {
+        if (orderErr || !insertedOrder) {
           console.warn('Client order upsert error, retrying without FK:', orderErr);
           const retry = await supabase.from('orders').upsert({
             order_id: order.orderId,
@@ -376,7 +377,7 @@ export function addOrder(order: OrderPayload): void {
             total: order.total,
             payment_method: order.paymentMethod,
             status: order.status
-          }, { onConflict: 'order_id' }).select('id').single();
+          }, { onConflict: 'order_id' }).select('id').maybeSingle();
           insertedOrder = retry.data;
           orderErr = retry.error;
         }
