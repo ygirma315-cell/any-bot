@@ -50,7 +50,7 @@ export async function POST(request: Request) {
           }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        let { data: insertedOrder, error: orderErr } = await dbClient.from('orders').upsert({
+        let { data: insertedOrder, error: orderErr } = await dbClient.from('orders').insert({
           order_id: orderPayload.orderId,
           telegram_user_id: orderPayload.telegramUser?.id || null,
           delivery_email: orderPayload.deliveryEmail || null,
@@ -58,12 +58,13 @@ export async function POST(request: Request) {
           total: orderPayload.total,
           payment_method: orderPayload.paymentMethod,
           status: orderPayload.status
-        }, { onConflict: 'order_id' }).select('id').maybeSingle();
+        }).select('id').maybeSingle();
 
-        if (orderErr || !insertedOrder) {
-          console.warn('First order upsert attempt error, retrying without FK:', orderErr);
+        if (orderErr) {
+          console.warn('First order insert attempt warning, retrying with unique fallback order_id:', orderErr);
+          const fallbackId = `${orderPayload.orderId}-${Date.now().toString().slice(-4)}`;
           const retry = await dbClient.from('orders').upsert({
-            order_id: orderPayload.orderId,
+            order_id: fallbackId,
             telegram_user_id: null,
             delivery_email: orderPayload.deliveryEmail || null,
             subtotal: orderPayload.subtotal,

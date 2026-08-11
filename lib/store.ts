@@ -311,24 +311,27 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   }
 }
 
-// Unique Sequential Order ID Generator (#ORD-1001-492, #ORD-1002-817...)
+// Clean Sequential Order ID Generator (#ORD-001, #ORD-002, #ORD-003...)
 export async function generateSequentialOrderId(): Promise<string> {
-  const currentOrders = getStoredOrders();
-  let nextNum = currentOrders.length + 1;
+  let nextNum = 1;
 
   if (isSupabaseConfigured && supabase) {
     try {
       const { count, error } = await supabase.from('orders').select('*', { count: 'exact', head: true });
-      if (!error && typeof count === 'number' && count > 0) {
+      if (!error && typeof count === 'number') {
         nextNum = count + 1;
       }
     } catch {
-      // fallback
+      const local = getStoredOrders();
+      nextNum = local.length + 1;
     }
+  } else {
+    const local = getStoredOrders();
+    nextNum = local.length + 1;
   }
 
-  const randomSuffix = Math.floor(100 + Math.random() * 900);
-  return `#ORD-${1000 + nextNum}-${randomSuffix}`;
+  const padded = String(nextNum).padStart(3, '0');
+  return `#ORD-${padded}`;
 }
 
 export function addOrder(order: OrderPayload): void {
@@ -357,7 +360,8 @@ export function addOrder(order: OrderPayload): void {
           }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
+        // Insert order record (if order_id exists, fallback insert without clashing)
+        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert({
           order_id: order.orderId,
           telegram_user_id: order.telegramUser?.id || null,
           delivery_email: order.deliveryEmail || null,
@@ -365,12 +369,13 @@ export function addOrder(order: OrderPayload): void {
           total: order.total,
           payment_method: order.paymentMethod,
           status: order.status
-        }, { onConflict: 'order_id' }).select('id').maybeSingle();
+        }).select('id').maybeSingle();
 
-        if (orderErr || !insertedOrder) {
-          console.warn('Client order upsert error, retrying without FK:', orderErr);
+        if (orderErr) {
+          // If collision or FK error occurs, retry with timestamp-backed unique order_id
+          const fallbackId = `${order.orderId}-${Date.now().toString().slice(-4)}`;
           const retry = await supabase.from('orders').upsert({
-            order_id: order.orderId,
+            order_id: fallbackId,
             telegram_user_id: null,
             delivery_email: order.deliveryEmail || null,
             subtotal: order.subtotal,
