@@ -461,43 +461,68 @@ export function getOnlineUsers24hCount(): number {
 }
 
 // --- ADMIN SETTINGS ---
-export function getStoredAdminPassword(): string {
-  if (typeof window === 'undefined') return 'admin123';
+export function getStoredAdminCredentials(): { username: string; password: string } {
+  if (typeof window === 'undefined') return { username: 'admin', password: 'admin123' };
   try {
-    return localStorage.getItem(ADMIN_PASSWORD_KEY) || 'admin123';
+    const username = localStorage.getItem('buy_ai_store_admin_username') || 'admin';
+    const password = localStorage.getItem(ADMIN_PASSWORD_KEY) || 'admin123';
+    return { username, password };
   } catch {
-    return 'admin123';
+    return { username: 'admin', password: 'admin123' };
   }
 }
 
-export function saveStoredAdminPassword(password: string): void {
+export function getStoredAdminPassword(): string {
+  return getStoredAdminCredentials().password;
+}
+
+export function saveStoredAdminCredentials(username: string, password: string): void {
   if (typeof window === 'undefined') return;
   try {
+    localStorage.setItem('buy_ai_store_admin_username', username);
     localStorage.setItem(ADMIN_PASSWORD_KEY, password);
     window.dispatchEvent(new Event('ai_store_admin_password_updated'));
 
     if (isSupabaseConfigured && supabase) {
-      Promise.resolve(supabase.from('admin_settings').upsert({ id: 1, admin_password_hash: password })).catch((err: unknown) => console.error('Supabase admin password sync error:', err));
+      Promise.resolve(supabase.from('admin_settings').upsert({
+        id: 1,
+        admin_username: username,
+        admin_password_hash: password,
+        updated_at: new Date().toISOString()
+      })).catch((err: unknown) => console.error('Supabase admin credentials sync error:', err));
     }
   } catch (e) {
-    console.error('Error saving admin password:', e);
+    console.error('Error saving admin credentials:', e);
   }
 }
 
-export async function fetchAdminPasswordFromSupabase(): Promise<string> {
-  if (!isSupabaseConfigured || !supabase) return getStoredAdminPassword();
+export function saveStoredAdminPassword(password: string): void {
+  const { username } = getStoredAdminCredentials();
+  saveStoredAdminCredentials(username, password);
+}
+
+export async function fetchAdminCredentialsFromSupabase(): Promise<{ username: string; password: string }> {
+  if (!isSupabaseConfigured || !supabase) return getStoredAdminCredentials();
   try {
-    const { data } = await supabase.from('admin_settings').select('admin_password_hash').eq('id', 1).single();
-    if (data && data.admin_password_hash) {
+    const { data } = await supabase.from('admin_settings').select('admin_username, admin_password_hash').eq('id', 1).single();
+    if (data) {
+      const username = data.admin_username || 'admin';
+      const password = data.admin_password_hash || 'admin123';
       if (typeof window !== 'undefined') {
-        localStorage.setItem(ADMIN_PASSWORD_KEY, data.admin_password_hash);
+        localStorage.setItem('buy_ai_store_admin_username', username);
+        localStorage.setItem(ADMIN_PASSWORD_KEY, password);
       }
-      return data.admin_password_hash;
+      return { username, password };
     }
   } catch (err) {
-    console.error('Error fetching admin password from Supabase:', err);
+    console.error('Error fetching admin credentials from Supabase:', err);
   }
-  return getStoredAdminPassword();
+  return getStoredAdminCredentials();
+}
+
+export async function fetchAdminPasswordFromSupabase(): Promise<string> {
+  const creds = await fetchAdminCredentialsFromSupabase();
+  return creds.password;
 }
 
 export function updateOrderStatus(orderId: string, status: OrderPayload['status']): void {

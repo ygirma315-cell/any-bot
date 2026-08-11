@@ -1,21 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
-import { getStoredAdminPassword, saveStoredAdminPassword, clearAllStoreHistory } from '@/lib/store';
-import { Settings, Lock, CheckCircle2, AlertCircle, KeyRound, Shield, Trash2, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { getStoredAdminCredentials, saveStoredAdminCredentials, clearAllStoreHistory, fetchAdminCredentialsFromSupabase } from '@/lib/store';
+import { Settings, Lock, CheckCircle2, AlertCircle, KeyRound, Shield, Trash2, RefreshCw, User } from 'lucide-react';
 
 export const AdminSettingsView: React.FC = () => {
+  const [adminUsername, setAdminUsername] = useState<string>('admin');
   const [oldPassword, setOldPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
 
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  useEffect(() => {
+    const creds = getStoredAdminCredentials();
+    setAdminUsername(creds.username);
+    fetchAdminCredentialsFromSupabase().then((c) => {
+      if (c) setAdminUsername(c.username);
+    });
+  }, []);
+
+  const handleCredentialsChange = (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMsg(null);
 
-    const currentSavedPassword = getStoredAdminPassword();
+    const { username: currentUsername, password: currentSavedPassword } = getStoredAdminCredentials();
+
+    if (!adminUsername.trim()) {
+      setStatusMsg({ type: 'error', message: 'Admin username cannot be empty.' });
+      return;
+    }
 
     if (!oldPassword) {
       setStatusMsg({ type: 'error', message: 'Please enter your current old password.' });
@@ -27,19 +41,21 @@ export const AdminSettingsView: React.FC = () => {
       return;
     }
 
-    if (!newPassword || newPassword.length < 4) {
+    const finalPassword = newPassword.trim() ? newPassword : currentSavedPassword;
+
+    if (newPassword && newPassword.length < 4) {
       setStatusMsg({ type: 'error', message: 'New password must be at least 4 characters long.' });
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (newPassword && newPassword !== confirmPassword) {
       setStatusMsg({ type: 'error', message: 'New password and confirmation do not match.' });
       return;
     }
 
-    saveStoredAdminPassword(newPassword);
+    saveStoredAdminCredentials(adminUsername.trim(), finalPassword);
 
-    setStatusMsg({ type: 'success', message: 'Admin password changed successfully! Your new password is now active.' });
+    setStatusMsg({ type: 'success', message: `Admin credentials updated successfully! Username: "${adminUsername.trim()}" is now active in Supabase & Local.` });
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
@@ -94,7 +110,25 @@ export const AdminSettingsView: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handlePasswordChange} className="space-y-4">
+        <form onSubmit={handleCredentialsChange} className="space-y-4">
+          {/* Admin Username Input */}
+          <div className="space-y-1">
+            <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+              Admin Portal Username <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                required
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                placeholder="Enter admin username (e.g. admin)..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
           {/* Old Password Input */}
           <div className="space-y-1">
             <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-1">
@@ -107,7 +141,7 @@ export const AdminSettingsView: React.FC = () => {
                 required
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Enter current password..."
+                placeholder="Enter current password to verify..."
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
               />
             </div>
@@ -116,17 +150,16 @@ export const AdminSettingsView: React.FC = () => {
           {/* New Password Input */}
           <div className="space-y-1">
             <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-              New Password <span className="text-rose-500">*</span>
+              New Password <span className="text-slate-400 font-normal">(Leave blank if keeping current password)</span>
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
-                required
                 minLength={4}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min 4 chars)..."
+                placeholder="Enter new password (optional)..."
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:bg-white transition-all"
               />
             </div>
@@ -135,13 +168,12 @@ export const AdminSettingsView: React.FC = () => {
           {/* Confirm Password Input */}
           <div className="space-y-1">
             <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-              Confirm New Password <span className="text-rose-500">*</span>
+              Confirm New Password
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
-                required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter new password..."
@@ -156,7 +188,7 @@ export const AdminSettingsView: React.FC = () => {
               className="px-6 py-3 bg-[#FF6B00] hover:bg-[#E66000] text-white font-extrabold text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             >
               <Shield className="w-4 h-4" />
-              <span>Update Password</span>
+              <span>Update Credentials in Supabase</span>
             </button>
           </div>
         </form>

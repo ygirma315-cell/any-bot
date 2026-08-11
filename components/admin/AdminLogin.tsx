@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
 
-import { getStoredAdminPassword, fetchAdminPasswordFromSupabase } from '@/lib/store';
+import { getStoredAdminCredentials, fetchAdminCredentialsFromSupabase } from '@/lib/store';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -16,7 +16,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchAdminPasswordFromSupabase().catch(() => {});
+    fetchAdminCredentialsFromSupabase().catch(() => {});
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -26,9 +26,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    const currentPassword = getStoredAdminPassword();
+    const { username: validUsername, password: validPassword } = getStoredAdminCredentials();
 
-    if (username.trim().toLowerCase() === 'admin' && password === currentPassword) {
+    if (username.trim().toLowerCase() === validUsername.trim().toLowerCase() && password === validPassword) {
       setError('');
       sessionStorage.setItem('ai_store_admin_authenticated', 'true');
       onLoginSuccess();

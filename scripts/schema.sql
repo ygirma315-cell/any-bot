@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS public.order_items (
 -- 8. Admin Settings Table
 CREATE TABLE IF NOT EXISTS public.admin_settings (
     id INT PRIMARY KEY DEFAULT 1,
+    admin_username TEXT NOT NULL DEFAULT 'admin',
     admin_password_hash TEXT NOT NULL DEFAULT 'admin123',
     telegram_admin_chat_id TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -95,8 +96,8 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
 );
 
 -- Insert Default Admin Settings Row
-INSERT INTO public.admin_settings (id, admin_password_hash)
-VALUES (1, 'admin123')
+INSERT INTO public.admin_settings (id, admin_username, admin_password_hash)
+VALUES (1, 'admin', 'admin123')
 ON CONFLICT (id) DO NOTHING;
 
 -- 9. Row Level Security (RLS) Policies
