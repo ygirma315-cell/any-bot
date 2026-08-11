@@ -24,7 +24,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   onViewStatus
 }) => {
   const [methods, setMethods] = useState<PaymentMethod[]>(getStoredPaymentMethods());
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(getStoredPaymentMethods()[0] || null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -38,9 +38,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     fetchPaymentMethodsFromSupabase().then((data) => {
       if (isMounted && data && data.length > 0) {
         setMethods(data);
-        if (!selectedMethod) {
-          setSelectedMethod(data[0]);
-        }
       }
     });
 
@@ -341,7 +338,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               key={method.id}
               onClick={() => {
                 triggerHaptic('light');
-                setSelectedMethod(method);
+                setSelectedMethod((prev) => (prev?.id === method.id ? null : method));
               }}
               className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
                 isSelected
