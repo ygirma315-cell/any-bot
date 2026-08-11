@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendTelegramAdminNotification, OrderPayload } from '@/lib/bot';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getAdminSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -35,11 +35,12 @@ export async function POST(request: Request) {
       status: 'Pending'
     };
 
-    // 1. Sync order directly into Supabase DB on server side if configured
-    if (isSupabaseConfigured && supabase) {
+    // 1. Sync order directly into Supabase DB on server side using admin client
+    const dbClient = getAdminSupabase();
+    if (isSupabaseConfigured && dbClient) {
       try {
         if (orderPayload.telegramUser?.id) {
-          await supabase.from('telegram_users').upsert({
+          await dbClient.from('telegram_users').upsert({
             telegram_id: orderPayload.telegramUser.id,
             username: orderPayload.telegramUser.username,
             first_name: orderPayload.telegramUser.first_name,
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
           }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
+        let { data: insertedOrder, error: orderErr } = await dbClient.from('orders').upsert({
           order_id: orderPayload.orderId,
           telegram_user_id: orderPayload.telegramUser?.id || null,
           delivery_email: orderPayload.deliveryEmail || null,
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
 
         if (orderErr) {
           console.warn('First order upsert attempt error, retrying without FK:', orderErr);
-          const retry = await supabase.from('orders').upsert({
+          const retry = await dbClient.from('orders').upsert({
             order_id: orderPayload.orderId,
             telegram_user_id: null,
             delivery_email: orderPayload.deliveryEmail || null,
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
             quantity: item.quantity,
             warranty: item.warranty
           }));
-          await supabase.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
+          await dbClient.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
         }
       } catch (dbErr) {
         console.error('Server-side Supabase order sync error:', dbErr);
