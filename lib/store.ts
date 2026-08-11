@@ -154,7 +154,12 @@ export function getStoredPaymentMethods(): PaymentMethod[] {
       localStorage.setItem(PAYMENTS_KEY, JSON.stringify(PAYMENT_METHODS));
       return PAYMENT_METHODS;
     }
-    return JSON.parse(raw);
+    const parsed: PaymentMethod[] = JSON.parse(raw);
+    const filtered = parsed.filter(m => m.id !== 'cbe' && m.id !== 'bank-transfer');
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem(PAYMENTS_KEY, JSON.stringify(filtered));
+    }
+    return filtered;
   } catch {
     return PAYMENT_METHODS;
   }

@@ -66,13 +66,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenContact }) => {
 
         {/* Right Action Shell: Customer User Badge + Dedicated Contact Us Button */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Customer User Badge Pill */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 shadow-xs">
-            <div className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[9px] font-black shrink-0 relative">
-              <span>{firstLetter}</span>
-              <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 border border-white" />
-            </div>
-            <span className="text-[10.5px] font-bold text-slate-800 truncate max-w-[85px]">
+          {/* Customer User Badge Pill (Username Text Only) */}
+          <div className="px-2.5 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 shadow-xs flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[11px] font-bold text-slate-800 truncate max-w-[95px]">
               {displayName}
             </span>
           </div>

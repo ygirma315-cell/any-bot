@@ -62,37 +62,5 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
       'Enter the exact amount and confirm transaction.',
       'Press "I\'ve Paid" below once transferred.'
     ]
-  },
-  {
-    id: 'cbe',
-    name: 'CBE Bank',
-    subtitle: 'Commercial Bank of Ethiopia transfer',
-    badge: 'Bank Direct',
-    logoPath: '/assets/payments/cbe.jpg',
-    color: 'rgba(147, 51, 234, 0.25)',
-    accountId: '1000492817263',
-    accountName: 'AI Store Digital Services',
-    instructions: [
-      'Open CBE Birr, CBE Mobile Banking app, or visit ATM.',
-      'Transfer to Account Number listed below.',
-      'Make sure recipient name displays "AI Store Digital Services".',
-      'Press "I\'ve Paid" to send your order for instant processing.'
-    ]
-  },
-  {
-    id: 'bank-transfer',
-    name: 'Bank Transfer',
-    subtitle: 'Other Bank & International Wire',
-    badge: 'Standard',
-    logoPath: '/assets/payments/bank.svg',
-    color: 'rgba(16, 185, 129, 0.25)',
-    accountId: 'ET09COMM1000492817263',
-    accountName: 'AI Store Global Ltd',
-    instructions: [
-      'Use online banking or bank app to initiate transfer.',
-      'Enter IBAN / Account Number below.',
-      'Include your Telegram handle in reference note.',
-      'Tap "I\'ve Paid" to complete order submission.'
-    ]
   }
 ];
