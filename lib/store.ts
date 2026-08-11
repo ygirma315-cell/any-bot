@@ -226,8 +226,12 @@ export function getStoredOrders(): OrderPayload[] {
     const raw = localStorage.getItem(ORDERS_KEY);
     if (!raw) return [];
     const parsed: OrderPayload[] = JSON.parse(raw);
-    // Discard old legacy format orders (e.g. ORD-2026...) so user starts 100% fresh with #ORD-
-    const clean = parsed.filter(o => o && typeof o.orderId === 'string' && o.orderId.startsWith('#ORD-'));
+    // Purge any old legacy orders (like ORD-20260810-2217 or long IDs)
+    const clean = parsed.filter(o => {
+      if (!o || typeof o.orderId !== 'string') return false;
+      if (o.orderId.includes('2026') || o.orderId.length > 12) return false;
+      return o.orderId.startsWith('#ORD-');
+    });
     if (clean.length !== parsed.length) {
       localStorage.setItem(ORDERS_KEY, JSON.stringify(clean));
     }
