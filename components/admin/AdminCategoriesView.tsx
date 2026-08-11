@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Product } from '@/config/products';
 import { getStoredCategories, saveStoredCategories, saveStoredProducts } from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { FolderPlus, Tag, Edit2, Trash2, Check, X, Layers, AlertCircle } from 'lucide-react';
+
 
 interface AdminCategoriesViewProps {
   categories: string[];
@@ -90,8 +92,12 @@ export const AdminCategoriesView: React.FC<AdminCategoriesViewProps> = ({
 
     const updatedCats = categories.filter(c => c !== catToDelete);
     saveStoredCategories(updatedCats);
+    if (isSupabaseConfigured && supabase) {
+      Promise.resolve(supabase.from('categories').delete().eq('name', catToDelete)).catch((err: unknown) => console.error('Supabase category delete error:', err));
+    }
     onRefresh();
   };
+
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">

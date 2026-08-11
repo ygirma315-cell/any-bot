@@ -1,12 +1,10 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
-import { PAYMENT_METHODS, PaymentMethod } from '@/config/payments';
+import { PaymentMethod } from '@/config/payments';
 import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
-import { addOrder } from '@/lib/store';
+import { addOrder, getStoredPaymentMethods, fetchPaymentMethodsFromSupabase, generateSequentialOrderId } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
 import { Copy, Check, ShieldCheck, ShieldAlert, CheckCircle2, Loader2, Sparkles, Mail, Send, Lock, FileText, Info, Wallet, ShoppingBag } from 'lucide-react';
 
@@ -25,7 +23,8 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   onBrowseServices,
   onViewStatus
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(PAYMENT_METHODS[0]);
+  const [methods, setMethods] = useState<PaymentMethod[]>(getStoredPaymentMethods());
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(getStoredPaymentMethods()[0] || null);
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -33,6 +32,30 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     orderId: string;
     timestamp: string;
   } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchPaymentMethodsFromSupabase().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setMethods(data);
+        if (!selectedMethod) {
+          setSelectedMethod(data[0]);
+        }
+      }
+    });
+
+    const handleUpdate = () => {
+      const updated = getStoredPaymentMethods();
+      setMethods(updated);
+    };
+
+    window.addEventListener('ai_store_payments_updated', handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('ai_store_payments_updated', handleUpdate);
+    };
+  }, []);
+
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
@@ -69,9 +92,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         last_name: user.last_name || ''
       };
 
-      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-      const generatedOrderId = `ORD-${dateStr}-${randomSuffix}`;
+      const generatedOrderId = await generateSequentialOrderId();
       const orderTimestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC';
 
       const payload: OrderPayload = {
@@ -307,7 +328,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
       {/* Payment Methods List */}
       <div className="space-y-2.5">
-        {PAYMENT_METHODS.map((method) => {
+        {methods.map((method) => {
           const isSelected = selectedMethod?.id === method.id;
           return (
             <div

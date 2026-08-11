@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Sparkles } from 'lucide-react';
 import { Product } from '@/config/products';
 import { ProductCard } from './ProductCard';
-import { getStoredProducts, getStoredCategories } from '@/lib/store';
+import { getStoredProducts, getStoredCategories, fetchProductsFromSupabase, fetchCategoriesFromSupabase } from '@/lib/store';
 import { triggerHaptic } from '@/lib/telegram';
 
 interface ProductGridProps {
@@ -21,6 +21,13 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
   const loadData = () => {
     setProducts(getStoredProducts());
     setCategories(getStoredCategories());
+
+    fetchProductsFromSupabase().then((data) => {
+      if (data && data.length > 0) setProducts(data);
+    });
+    fetchCategoriesFromSupabase().then((data) => {
+      if (data && data.length > 0) setCategories(data);
+    });
   };
 
   useEffect(() => {
@@ -35,6 +42,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ cart, onAddToCart }) =
       window.removeEventListener('ai_store_categories_updated', handleUpdate);
     };
   }, []);
+
 
   const filteredProducts = products.filter((p) => {
     const matchesSearch =

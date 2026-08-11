@@ -5,8 +5,11 @@ import Image from 'next/image';
 import { Product } from '@/config/products';
 import { 
   getStoredProducts, saveStoredProducts, getStoredCategories, 
-  saveStoredCategories, getStoredOrders, getStoredVisitors, getOnlineUsers24hCount 
+  saveStoredCategories, getStoredOrders, getStoredVisitors, getOnlineUsers24hCount,
+  fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchOrdersFromSupabase
 } from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 import { ProductEditorModal } from './ProductEditorModal';
 import { AdminOrdersView } from './AdminOrdersView';
 import { AdminCategoriesView } from './AdminCategoriesView';
@@ -52,7 +55,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setPendingOrdersCount(ords.filter(o => o.status === 'Pending' || o.status === 'Payment Submitted').length);
     setVisitorsCount(vists.length);
     setOnline24hCount(onlineCount);
+
+    fetchProductsFromSupabase().then(p => { if (p && p.length > 0) setProducts(p); });
+    fetchCategoriesFromSupabase().then(c => { if (c && c.length > 0) setCategories(c); });
+    fetchOrdersFromSupabase().then(o => {
+      if (o) {
+        setOrdersCount(o.length);
+        setPendingOrdersCount(o.filter(item => item.status === 'Pending' || item.status === 'Payment Submitted').length);
+      }
+    });
   };
+
 
   useEffect(() => {
     refreshData();
@@ -98,8 +111,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     if (confirm('Are you sure you want to delete this product from store?')) {
       const updated = products.filter((p) => p.id !== productId);
       saveStoredProducts(updated);
+      if (isSupabaseConfigured && supabase) {
+        Promise.resolve(supabase.from('products').delete().eq('id', productId)).catch((err: unknown) => console.error('Supabase delete error:', err));
+      }
     }
   };
+
 
   return (
     <div className="min-h-screen w-full bg-[#F6F8FB] text-slate-900 flex font-sans overflow-x-hidden">

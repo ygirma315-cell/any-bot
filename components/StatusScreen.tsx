@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle2, XCircle, ShoppingBag, ShieldCheck, ShieldAlert, Sparkles, RefreshCw, Mail, User } from 'lucide-react';
-import { getStoredOrders } from '@/lib/store';
+import { getStoredOrders, fetchOrdersFromSupabase } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
 import { triggerHaptic } from '@/lib/telegram';
 
@@ -15,6 +15,9 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
 
   const loadOrders = () => {
     setOrders(getStoredOrders());
+    fetchOrdersFromSupabase().then((data) => {
+      if (data && data.length > 0) setOrders(data);
+    });
   };
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
       window.removeEventListener('ai_store_orders_updated', handleOrdersUpdate);
     };
   }, []);
+
 
   if (orders.length === 0) {
     return (

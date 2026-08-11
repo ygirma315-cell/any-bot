@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { OrderPayload } from '@/lib/bot';
-import { getStoredOrders, updateOrderStatus, clearAllOrders } from '@/lib/store';
+import { getStoredOrders, updateOrderStatus, clearAllOrders, fetchOrdersFromSupabase } from '@/lib/store';
 import { Clock, CheckCircle2, XCircle, User, Mail, Send, AlertTriangle, ShieldCheck, RefreshCw, Sparkles, Filter, Trash2 } from 'lucide-react';
 
 export const AdminOrdersView: React.FC = () => {
@@ -12,6 +12,9 @@ export const AdminOrdersView: React.FC = () => {
 
   const loadOrders = () => {
     setOrders(getStoredOrders());
+    fetchOrdersFromSupabase().then((data) => {
+      if (data && data.length > 0) setOrders(data);
+    });
   };
 
   const handleClearHistory = () => {
@@ -29,6 +32,7 @@ export const AdminOrdersView: React.FC = () => {
     window.addEventListener('ai_store_orders_updated', handleUpdate);
     return () => window.removeEventListener('ai_store_orders_updated', handleUpdate);
   }, []);
+
 
   const handleAcceptOrder = (order: OrderPayload) => {
     updateOrderStatus(order.orderId, 'Accepted');

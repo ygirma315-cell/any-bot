@@ -10,6 +10,7 @@
     "bot": "tsx scripts/bot-runner.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "autoprefixer": "^10.4.19",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.427.0",

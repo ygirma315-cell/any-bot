@@ -4,7 +4,7 @@ import { sendTelegramAdminNotification, OrderPayload } from '@/lib/bot';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { telegramUser, items, total, subtotal, paymentMethod } = body;
+    const { orderId: incomingOrderId, telegramUser, items, total, subtotal, paymentMethod } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -20,10 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate unique human-readable order ID
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const orderId = `ORD-${dateStr}-${randomSuffix}`;
+    const orderId = incomingOrderId || `#1`;
 
     const orderPayload: OrderPayload = {
       orderId,
@@ -36,7 +33,7 @@ export async function POST(request: Request) {
       status: 'Payment Submitted'
     };
 
-    // Safely attempt notification
+    // Safely attempt notification (using server-side secret credentials)
     const telegramResult = await sendTelegramAdminNotification(orderPayload);
 
     return NextResponse.json({
@@ -46,7 +43,7 @@ export async function POST(request: Request) {
       timestamp: orderPayload.timestamp,
       notification: telegramResult.message
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Order creation error:', err);
     return NextResponse.json(
       { success: false, error: 'Internal Server Error while creating order.' },
