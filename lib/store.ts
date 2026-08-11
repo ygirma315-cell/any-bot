@@ -353,10 +353,10 @@ export function addOrder(order: OrderPayload): void {
             last_name: order.telegramUser.last_name,
             has_ordered: true,
             last_active_at: new Date().toISOString()
-          });
+          }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        const { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
+        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
           order_id: order.orderId,
           telegram_user_id: order.telegramUser?.id || null,
           delivery_email: order.deliveryEmail || null,
@@ -365,6 +365,21 @@ export function addOrder(order: OrderPayload): void {
           payment_method: order.paymentMethod,
           status: order.status
         }, { onConflict: 'order_id' }).select('id').single();
+
+        if (orderErr) {
+          console.warn('Client order upsert error, retrying without FK:', orderErr);
+          const retry = await supabase.from('orders').upsert({
+            order_id: order.orderId,
+            telegram_user_id: null,
+            delivery_email: order.deliveryEmail || null,
+            subtotal: order.subtotal,
+            total: order.total,
+            payment_method: order.paymentMethod,
+            status: order.status
+          }, { onConflict: 'order_id' }).select('id').single();
+          insertedOrder = retry.data;
+          orderErr = retry.error;
+        }
 
         if (!orderErr && insertedOrder && order.items?.length) {
           const itemsToInsert = order.items.map(item => ({
@@ -375,7 +390,7 @@ export function addOrder(order: OrderPayload): void {
             quantity: item.quantity,
             warranty: item.warranty
           }));
-          await supabase.from('order_items').insert(itemsToInsert);
+          await supabase.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
         }
       } catch (err: unknown) {
         console.error('Supabase order sync error:', err);

@@ -46,10 +46,10 @@ export async function POST(request: Request) {
             last_name: orderPayload.telegramUser.last_name,
             has_ordered: true,
             last_active_at: new Date().toISOString()
-          });
+          }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        const { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
+        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').upsert({
           order_id: orderPayload.orderId,
           telegram_user_id: orderPayload.telegramUser?.id || null,
           delivery_email: orderPayload.deliveryEmail || null,
@@ -58,6 +58,21 @@ export async function POST(request: Request) {
           payment_method: orderPayload.paymentMethod,
           status: orderPayload.status
         }, { onConflict: 'order_id' }).select('id').single();
+
+        if (orderErr) {
+          console.warn('First order upsert attempt error, retrying without FK:', orderErr);
+          const retry = await supabase.from('orders').upsert({
+            order_id: orderPayload.orderId,
+            telegram_user_id: null,
+            delivery_email: orderPayload.deliveryEmail || null,
+            subtotal: orderPayload.subtotal,
+            total: orderPayload.total,
+            payment_method: orderPayload.paymentMethod,
+            status: orderPayload.status
+          }, { onConflict: 'order_id' }).select('id').single();
+          insertedOrder = retry.data;
+          orderErr = retry.error;
+        }
 
         if (!orderErr && insertedOrder && orderPayload.items?.length) {
           const itemsToInsert = orderPayload.items.map(item => ({
@@ -68,7 +83,7 @@ export async function POST(request: Request) {
             quantity: item.quantity,
             warranty: item.warranty
           }));
-          await supabase.from('order_items').insert(itemsToInsert);
+          await supabase.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
         }
       } catch (dbErr) {
         console.error('Server-side Supabase order sync error:', dbErr);
