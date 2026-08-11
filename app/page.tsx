@@ -19,6 +19,18 @@ export default function Home() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [userEmail, setUserEmail] = useState<string>('');
   const [isContactModalOpen, setIsContactModalOpen] = useState<boolean>(false);
+  const mainRef = React.useRef<HTMLElement>(null);
+
+  const scrollToTop = () => {
+    if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleTabChange = (tab: 'services' | 'order' | 'payment' | 'status') => {
+    setActiveTab(tab);
+    scrollToTop();
+  };
 
   useEffect(() => {
     const webApp = getTelegramWebApp();
@@ -42,8 +54,8 @@ export default function Home() {
       }
       return [...prevCart, { product, quantity: 1 }];
     });
-    // Auto-navigate user directly to Order page on Add
-    setActiveTab('order');
+    // Auto-navigate user directly to Order page on Add & scroll to top
+    handleTabChange('order');
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
@@ -86,7 +98,7 @@ export default function Home() {
         <Header onOpenContact={() => setIsContactModalOpen(true)} />
 
         {/* Scrollable Middle Content Body */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar overscroll-contain overscroll-y-contain">
+        <main ref={mainRef} className="flex-1 overflow-y-auto custom-scrollbar touch-pan-y overscroll-contain style-touch-scroll">
           {activeTab === 'services' && (
             <ProductGrid cart={cart} onAddToCart={handleAddToCart} />
           )}
@@ -98,8 +110,8 @@ export default function Home() {
               setUserEmail={setUserEmail}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
-              onProceedToPayment={() => setActiveTab('payment')}
-              onBrowseServices={() => setActiveTab('services')}
+              onProceedToPayment={() => handleTabChange('payment')}
+              onBrowseServices={() => handleTabChange('services')}
             />
           )}
 
@@ -108,21 +120,22 @@ export default function Home() {
               cart={cart}
               userEmail={userEmail}
               onOrderCompleted={() => setCart([])}
-              onBrowseServices={() => setActiveTab('services')}
-              onViewStatus={() => setActiveTab('status')}
+              onBrowseServices={() => handleTabChange('services')}
+              onViewStatus={() => handleTabChange('status')}
             />
           )}
 
           {activeTab === 'status' && (
-            <StatusScreen onBrowseServices={() => setActiveTab('services')} />
+            <StatusScreen onBrowseServices={() => handleTabChange('services')} />
           )}
         </main>
 
         {/* Fixed Bottom Navigation (Never Scrolls) */}
         <Navbar
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           cartCount={totalCartCount}
+          onNavSpaceClick={scrollToTop}
         />
       </div>
     </div>

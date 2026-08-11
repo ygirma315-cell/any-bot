@@ -235,7 +235,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   }
 
   return (
-    <div className="px-4 py-4 space-y-4 pb-12">
+    <div className="px-4 py-4 space-y-4 pb-28">
       <div>
         <h2 className="heading-font text-lg font-bold text-slate-900">PAYMENT DETAILS</h2>
         <p className="text-xs text-slate-500">

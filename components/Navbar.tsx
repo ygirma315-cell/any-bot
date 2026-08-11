@@ -9,9 +9,10 @@ interface NavbarProps {
   activeTab: 'services' | 'order' | 'payment' | 'status';
   setActiveTab: (tab: 'services' | 'order' | 'payment' | 'status') => void;
   cartCount: number;
+  onNavSpaceClick?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCount }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCount, onNavSpaceClick }) => {
   const [pendingCount, setPendingCount] = useState<number>(0);
 
   const checkPending = () => {
@@ -64,13 +65,19 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
     }
   ];
 
-  const handleTabClick = (tabId: 'services' | 'order' | 'payment' | 'status') => {
+  const handleTabClick = (e: React.MouseEvent, tabId: 'services' | 'order' | 'payment' | 'status') => {
+    e.stopPropagation();
     triggerHaptic('light');
     setActiveTab(tabId);
   };
 
   return (
-    <nav className="relative z-30 shrink-0 w-full px-3 py-2 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none touch-none overscroll-none">
+    <nav
+      onClick={() => {
+        if (onNavSpaceClick) onNavSpaceClick();
+      }}
+      className="relative z-30 shrink-0 w-full px-3 py-2 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] select-none cursor-pointer"
+    >
       <div className="relative flex items-center justify-around max-w-md mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -79,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
           return (
             <button
               key={tab.id}
-              onClick={() => handleTabClick(tab.id as 'services' | 'order' | 'payment' | 'status')}
+              onClick={(e) => handleTabClick(e, tab.id as 'services' | 'order' | 'payment' | 'status')}
               className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-300 ${
                 isActive ? 'scale-105' : 'opacity-70 hover:opacity-100'
               }`}

@@ -87,7 +87,7 @@ export const OrderScreen: React.FC<OrderScreenProps> = ({
   }
 
   return (
-    <div className="px-4 py-4 space-y-4 pb-12">
+    <div className="px-4 py-4 space-y-4 pb-28">
       {/* Header Title */}
       <div className="flex items-center justify-between">
         <div>

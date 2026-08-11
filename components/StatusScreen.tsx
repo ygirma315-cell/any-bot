@@ -70,7 +70,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
   }
 
   return (
-    <div className="px-4 py-4 space-y-4 pb-12">
+    <div className="px-4 py-4 space-y-4 pb-28">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="heading-font text-lg font-bold text-slate-900">MY ORDER STATUS</h2>
