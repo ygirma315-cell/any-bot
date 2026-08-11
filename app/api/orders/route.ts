@@ -42,15 +42,15 @@ export async function POST(request: Request) {
         if (orderPayload.telegramUser?.id) {
           await dbClient.from('telegram_users').upsert({
             telegram_id: orderPayload.telegramUser.id,
-            username: orderPayload.telegramUser.username,
-            first_name: orderPayload.telegramUser.first_name,
-            last_name: orderPayload.telegramUser.last_name,
+            username: orderPayload.telegramUser.username || null,
+            first_name: orderPayload.telegramUser.first_name || 'Customer',
+            last_name: orderPayload.telegramUser.last_name || null,
             has_ordered: true,
             last_active_at: new Date().toISOString()
-          }).catch(err => console.warn('telegram_users upsert warning:', err));
+          }, { onConflict: 'telegram_id' }).catch(err => console.warn('telegram_users upsert warning:', err));
         }
 
-        let { data: insertedOrder, error: orderErr } = await dbClient.from('orders').insert({
+        const orderDataToInsert = {
           order_id: orderPayload.orderId,
           telegram_user_id: orderPayload.telegramUser?.id || null,
           delivery_email: orderPayload.deliveryEmail || null,
@@ -58,34 +58,44 @@ export async function POST(request: Request) {
           total: orderPayload.total,
           payment_method: orderPayload.paymentMethod,
           status: orderPayload.status
-        }).select('id').maybeSingle();
+        };
 
-        if (orderErr) {
-          console.warn('First order insert attempt warning, retrying with unique fallback order_id:', orderErr);
+        let { data: insertedOrder, error: orderErr } = await dbClient
+          .from('orders')
+          .insert(orderDataToInsert)
+          .select('id')
+          .maybeSingle();
+
+        if (orderErr || !insertedOrder) {
+          console.warn('First order insert attempt warning, retrying with fallback:', orderErr);
           const fallbackId = `${orderPayload.orderId}-${Date.now().toString().slice(-4)}`;
-          const retry = await dbClient.from('orders').upsert({
-            order_id: fallbackId,
-            telegram_user_id: null,
-            delivery_email: orderPayload.deliveryEmail || null,
-            subtotal: orderPayload.subtotal,
-            total: orderPayload.total,
-            payment_method: orderPayload.paymentMethod,
-            status: orderPayload.status
-          }, { onConflict: 'order_id' }).select('id').maybeSingle();
+          const retryRow = { ...orderDataToInsert, order_id: fallbackId, telegram_user_id: null };
+          const retry = await dbClient
+            .from('orders')
+            .insert(retryRow)
+            .select('id')
+            .maybeSingle();
           insertedOrder = retry.data;
           orderErr = retry.error;
         }
 
-        if (!orderErr && insertedOrder && orderPayload.items?.length) {
+        if (orderErr) {
+          console.error('Final Supabase order insert error:', orderErr);
+        }
+
+        if (insertedOrder?.id && orderPayload.items?.length) {
           const itemsToInsert = orderPayload.items.map(item => ({
             order_id: insertedOrder.id,
-            product_id: item.id,
-            product_name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            warranty: item.warranty
+            product_id: item.id || 'product',
+            product_name: item.name || 'AI Product',
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1,
+            warranty: item.warranty || 'Warranty Included'
           }));
-          await dbClient.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
+          const { error: itemsErr } = await dbClient.from('order_items').insert(itemsToInsert);
+          if (itemsErr) {
+            console.error('order_items insert error:', itemsErr);
+          }
         }
       } catch (dbErr) {
         console.error('Server-side Supabase order sync error:', dbErr);
