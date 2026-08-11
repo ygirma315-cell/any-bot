@@ -18,7 +18,8 @@ import { AdminSettingsView } from './AdminSettingsView';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, 
   Tag, ExternalLink, Sparkles, FolderPlus, Layers, Bell, UserCheck, 
-  ArrowUpRight, Edit2, X, Users, Settings, Grid, Home, Store, Activity, Menu
+  ArrowUpRight, Edit2, X, Users, Settings, Grid, Home, Store, Activity, Menu,
+  RefreshCw, Check
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -70,7 +71,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  // Refresh State & Banner Toast
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [headerToast, setHeaderToast] = useState<string | null>(null);
+
   const refreshData = () => {
+    setIsRefreshing(true);
     const prods = getStoredProducts();
     const cats = getStoredCategories();
     const ords = getStoredOrders();
@@ -84,14 +90,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setVisitorsCount(vists.length);
     setOnline24hCount(onlineCount);
 
-    fetchProductsFromSupabase().then(p => { if (p && p.length > 0) setProducts(p); });
-    fetchCategoriesFromSupabase().then(c => { if (c && c.length > 0) setCategories(c); });
-    fetchOrdersFromSupabase().then(o => {
-      if (o) {
-        setOrdersCount(o.length);
-        setPendingOrdersCount(o.filter(item => item.status === 'Pending' || item.status === 'Payment Submitted').length);
-      }
+    Promise.all([
+      fetchProductsFromSupabase().then(p => { if (p && p.length > 0) setProducts(p); }),
+      fetchCategoriesFromSupabase().then(c => { if (c && c.length > 0) setCategories(c); }),
+      fetchOrdersFromSupabase().then(o => {
+        if (o) {
+          setOrdersCount(o.length);
+          setPendingOrdersCount(o.filter(item => item.status === 'Pending' || item.status === 'Payment Submitted').length);
+        }
+      })
+    ]).finally(() => {
+      setTimeout(() => setIsRefreshing(false), 500);
     });
+  };
+
+  const handleManualRefresh = () => {
+    refreshData();
+    setHeaderToast('⚡ Store data refreshed from Supabase DB!');
+    setTimeout(() => setHeaderToast(null), 3500);
   };
 
 
@@ -337,38 +353,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       </aside>
 
       {/* Main Panel View Shell */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-[0_2px_10px_rgba(15,23,42,0.02)]">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-[0_2px_10px_rgba(15,23,42,0.02)] shrink-0">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors md:hidden"
+              title="Toggle sidebar navigation"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="heading-font text-base font-extrabold text-slate-900 capitalize">
+            <h1 className="heading-font text-sm sm:text-base font-extrabold text-slate-900 capitalize truncate">
               {activeTab === 'users' ? 'Online Users & Visitor Analytics' : activeTab} Page
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Top Refresh Button */}
+            <button
+              type="button"
+              disabled={isRefreshing}
+              onClick={handleManualRefresh}
+              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs shrink-0"
+              title="Refresh products, orders, categories & visitors from Supabase DB"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-orange-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh Data'}</span>
+            </button>
+
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#FF6B00] border border-orange-100 text-xs font-extrabold transition-all flex items-center gap-1.5"
+              className="px-3 py-2 sm:px-3.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#FF6B00] border border-orange-100 text-xs font-extrabold transition-all flex items-center gap-1.5 shrink-0"
             >
               <Store className="w-4 h-4 text-[#FF6B00]" />
-              <span>Main Store Page</span>
+              <span className="hidden sm:inline">Main Store Page</span>
               <ExternalLink className="w-3.5 h-3.5 text-[#FF6B00]" />
             </a>
           </div>
         </header>
 
-        {/* Content Body Area */}
-        <main className="p-4 sm:p-8 flex-1 overflow-y-auto custom-scrollbar">
+        {/* Refresh Toast Banner */}
+        {headerToast && (
+          <div className="bg-slate-900 text-white text-xs font-bold py-2 px-4 px-8 text-center flex items-center justify-center gap-2 animate-fadeIn border-b border-slate-800">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>{headerToast}</span>
+          </div>
+        )}
+
+        {/* Content Body Area - Fully Scrollable on all devices */}
+        <main className="p-4 sm:p-8 flex-1 overflow-y-auto custom-scrollbar pb-32">
           
           {/* ==================== 1. DASHBOARD PAGE ==================== */}
           {activeTab === 'dashboard' && (
