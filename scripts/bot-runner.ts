@@ -38,9 +38,20 @@ console.log(`🔗 Store Mini App URL configured: ${APP_URL}\n`);
 
 let offset = 0;
 
+async function initBot() {
+  try {
+    // Delete any webhook to ensure polling gets all updates cleanly
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook?drop_pending_updates=false`);
+    console.log(`✅ Webhook cleared. Telegram Bot is actively listening for messages...\n`);
+  } catch (err) {
+    console.error('Error clearing webhook on startup:', err);
+  }
+  pollUpdates();
+}
+
 async function pollUpdates() {
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=30`);
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=2`);
     const data = await res.json();
 
     if (data.ok && Array.isArray(data.result)) {
@@ -48,9 +59,11 @@ async function pollUpdates() {
         offset = update.update_id + 1;
         await handleUpdate(update);
       }
+    } else if (!data.ok) {
+      console.error('Telegram Polling Error:', data.description || data);
     }
   } catch (err) {
-    console.error('Polling error:', err);
+    console.error('Network Polling error:', err);
   }
 
   setTimeout(pollUpdates, 1000);
@@ -101,4 +114,4 @@ async function handleUpdate(update: any) {
   }
 }
 
-pollUpdates();
+initBot();
