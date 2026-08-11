@@ -454,6 +454,22 @@ export function saveStoredAdminPassword(password: string): void {
   }
 }
 
+export async function fetchAdminPasswordFromSupabase(): Promise<string> {
+  if (!isSupabaseConfigured || !supabase) return getStoredAdminPassword();
+  try {
+    const { data } = await supabase.from('admin_settings').select('admin_password_hash').eq('id', 1).single();
+    if (data && data.admin_password_hash) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ADMIN_PASSWORD_KEY, data.admin_password_hash);
+      }
+      return data.admin_password_hash;
+    }
+  } catch (err) {
+    console.error('Error fetching admin password from Supabase:', err);
+  }
+  return getStoredAdminPassword();
+}
+
 export function updateOrderStatus(orderId: string, status: OrderPayload['status']): void {
   const currentOrders = getStoredOrders();
   const updated = currentOrders.map(order => {

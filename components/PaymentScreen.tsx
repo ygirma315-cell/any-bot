@@ -225,12 +225,12 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
         <div className="pt-2 text-center">
           <a
-            href="https://t.me/AnyAi_Support"
+            href="https://t.me/exo80"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#FF6B00] transition-colors underline"
           >
-            <span>If any problem with your order, Contact Us</span>
+            <span>If any problem with your order, Contact Support (@exo80)</span>
           </a>
         </div>
       </div>
@@ -241,7 +241,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     <div className="px-4 py-4 space-y-4 pb-12">
       <div>
         <h2 className="heading-font text-lg font-bold text-slate-900">PAYMENT DETAILS</h2>
-        <p className="text-xs text-slate-500">Confirm delivery email & choose payment method</p>
+        <p className="text-xs text-slate-500">
+          {cart.length > 0 ? 'Confirm delivery email & choose payment method' : 'Supported payment methods'}
+        </p>
       </div>
 
       {/* Prompt Banner when cart is empty */}
@@ -272,59 +274,63 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         </div>
       )}
 
-      {/* Non-Editable Customer & Delivery Information Card */}
-      <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-            <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer & Delivery Info
-          </span>
-          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
-            <Lock className="w-3 h-3 text-slate-400" /> Read-Only Info
-          </span>
-        </div>
-
-        <div className="space-y-2 text-xs">
-          {/* Telegram Name & Username Fetched */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-              <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Name</span>
-              <span className="font-extrabold text-slate-900 truncate block">
-                {getTelegramUser().user.first_name} {getTelegramUser().user.last_name || ''}
-              </span>
-            </div>
-
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-              <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
-              <span className="font-extrabold text-orange-600 truncate block">
-                @{getTelegramUser().user.username || 'user'}
-              </span>
-            </div>
-          </div>
-
-          {/* Delivery Email Destination */}
-          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
-            <div className="truncate pr-2">
-              <span className="text-[10px] font-bold text-slate-400 block font-sans uppercase">Delivery Destination</span>
-              <span>{userEmail || 'No email provided'}</span>
-            </div>
-            <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded shrink-0">
-              Credentials Target
+      {/* Non-Editable Customer & Delivery Information Card - ONLY SHOWN WHEN PRODUCT IS SELECTED */}
+      {cart.length > 0 && (
+        <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+              <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer & Delivery Info
+            </span>
+            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
+              <Lock className="w-3 h-3 text-slate-400" /> Read-Only Info
             </span>
           </div>
-        </div>
-      </div>
 
-      {/* Short Updated Payment Rules Card */}
-      <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
-        <p className="font-extrabold text-orange-950 flex items-center gap-1">
-          <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment & Refund Policy:
-        </p>
-        <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
-          <p>• <strong>1 Product = 1 Email:</strong> Each email address can only be used once per product.</p>
-          <p>• <strong>Warranty Products:</strong> Refunds & replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
-          <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
+          <div className="space-y-2 text-xs">
+            {/* Telegram Name & Username Fetched */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Name</span>
+                <span className="font-extrabold text-slate-900 truncate block">
+                  {getTelegramUser().user.first_name} {getTelegramUser().user.last_name || ''}
+                </span>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
+                <span className="font-extrabold text-orange-600 truncate block">
+                  @{getTelegramUser().user.username || 'user'}
+                </span>
+              </div>
+            </div>
+
+            {/* Delivery Email Destination */}
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
+              <div className="truncate pr-2">
+                <span className="text-[10px] font-bold text-slate-400 block font-sans uppercase">Delivery Destination</span>
+                <span>{userEmail || 'No email provided'}</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded shrink-0">
+                Credentials Target
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Short Updated Payment Rules Card - ONLY SHOWN WHEN PRODUCT IS SELECTED */}
+      {cart.length > 0 && (
+        <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
+          <p className="font-extrabold text-orange-950 flex items-center gap-1">
+            <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment & Refund Policy:
+          </p>
+          <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
+            <p>• <strong>1 Product = 1 Email:</strong> Each email address can only be used once per product.</p>
+            <p>• <strong>Warranty Products:</strong> Refunds & replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
+            <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
+          </div>
+        </div>
+      )}
 
       {/* Payment Methods List */}
       <div className="space-y-2.5">
@@ -376,12 +382,19 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
               {isSelected && (
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-3 animate-fadeIn">
-                  <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                    <span className="text-xs font-medium text-slate-600">Amount to Transfer:</span>
-                    <span className="heading-font text-base font-extrabold text-[#FF6B00]">
-                      ${totalAmount.toFixed(2)} USD
-                    </span>
-                  </div>
+                  {cart.length > 0 ? (
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                      <span className="text-xs font-medium text-slate-600">Amount to Transfer:</span>
+                      <span className="heading-font text-base font-extrabold text-[#FF6B00]">
+                        ${totalAmount.toFixed(2)} USD
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-2.5 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs font-semibold text-indigo-900">
+                      <span>Order Status:</span>
+                      <span className="text-indigo-600 font-extrabold">No product selected</span>
+                    </div>
+                  )}
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight block mb-1">

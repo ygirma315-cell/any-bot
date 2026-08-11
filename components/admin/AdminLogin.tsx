@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Lock, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
 
-import { getStoredAdminPassword } from '@/lib/store';
+import { getStoredAdminPassword, fetchAdminPasswordFromSupabase } from '@/lib/store';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -14,6 +14,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    fetchAdminPasswordFromSupabase().catch(() => {});
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +35,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     } else {
       setError(`Invalid username or password.`);
     }
-  };
-
-  const handleFillDemo = () => {
-    setUsername('admin');
-    setPassword('admin123');
-    setError('');
   };
 
   return (
@@ -85,7 +83,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder="Enter username"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/20 transition-all shadow-xs"
               />
             </div>
@@ -115,18 +113,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* Demo Quick Auto-Fill helper button */}
-        <div className="pt-3 border-t border-slate-100 text-center">
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="inline-flex items-center gap-1.5 text-xs text-[#FF6B00] hover:text-[#E66000] font-bold transition-colors"
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>Auto-fill Demo Credentials (admin / admin123)</span>
-          </button>
-        </div>
       </div>
     </div>
   );

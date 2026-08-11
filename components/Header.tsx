@@ -2,9 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { getTelegramUser, TelegramUser } from '@/lib/telegram';
+import { getTelegramUser, TelegramUser, triggerHaptic } from '@/lib/telegram';
+import { User, MessageCircle } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenContact?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenContact }) => {
   const [user, setUser] = useState<TelegramUser>({
     id: 30685155,
     first_name: 'Customer',
@@ -32,8 +37,10 @@ export const Header: React.FC = () => {
     ? `@${user.username}`
     : `${user.first_name} ${user.last_name || ''}`.trim() || 'Customer';
 
+  const firstLetter = (user.username || user.first_name || 'C').charAt(0).toUpperCase();
+
   return (
-    <header className="relative z-30 shrink-0 w-full px-5 py-3.5 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-xs transition-all">
+    <header className="relative z-30 shrink-0 w-full px-4 py-3 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-xs transition-all select-none touch-none overscroll-none">
       <div className="flex items-center justify-between gap-2">
         {/* BUY AI STORE Header Title & Custom Unified AI Emblem Logo */}
         <div className="flex items-center gap-2.5">
@@ -57,17 +64,29 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* User Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span className="text-[11px] font-bold text-slate-800 truncate max-w-[120px]">
+        {/* Circular Clickable Customer / User Badge Pill */}
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic('light');
+            if (onOpenContact) onOpenContact();
+          }}
+          className="flex items-center gap-1.5 p-1 pr-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 hover:border-[#FF6B00] shadow-md transition-all transform active:scale-95 group"
+          title="Click for Support & Contacts"
+        >
+          {/* Outer Circle Avatar */}
+          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FF6B00] to-indigo-500 flex items-center justify-center text-[10px] font-black text-white shadow-xs shrink-0 relative">
+            <span>{firstLetter}</span>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900" />
+          </div>
+
+          <span className="text-[11px] font-extrabold text-slate-100 truncate max-w-[100px] group-hover:text-orange-300 transition-colors">
             {displayName}
           </span>
-        </div>
+          <MessageCircle className="w-3.5 h-3.5 text-orange-400 opacity-80 group-hover:opacity-100 shrink-0" />
+        </button>
       </div>
     </header>
   );
 };
+

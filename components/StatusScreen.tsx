@@ -34,31 +34,36 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
 
   if (orders.length === 0) {
     return (
-      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-5 min-h-[60vh]">
-        <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-tr from-slate-100 via-indigo-50 to-blue-50 p-[2px] shadow-sm flex items-center justify-center">
-          <div className="w-full h-full bg-white rounded-[22px] flex items-center justify-center relative overflow-hidden">
-            <Clock className="w-10 h-10 text-slate-300 relative z-10" />
-            <Sparkles className="w-4 h-4 text-indigo-400 absolute top-3 right-3 animate-pulse" />
+      <div className="px-4 py-12 flex flex-col items-center justify-center text-center space-y-6 min-h-[60vh] animate-fadeIn">
+        {/* Premium Glowing Icon Container */}
+        <div className="relative w-24 h-24 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-purple-500/30 via-indigo-500/20 to-pink-500/30 blur-xl animate-pulse" />
+          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 p-0.5 shadow-xl flex items-center justify-center">
+            <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center relative overflow-hidden">
+              <ShoppingBag className="w-9 h-9 text-purple-300 stroke-[2.2]" />
+              <Sparkles className="w-4 h-4 text-amber-400 absolute top-2 right-2 animate-bounce" />
+            </div>
           </div>
         </div>
 
-        <div>
-          <h2 className="heading-font text-lg font-bold text-slate-900">No active orders yet</h2>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
+        <div className="space-y-1.5 max-w-xs mx-auto">
+          <h2 className="heading-font text-lg font-extrabold text-slate-900">No Active Orders Yet</h2>
+          <p className="text-xs font-semibold text-slate-500 leading-relaxed">
             When you purchase a subscription and submit payment, your order status will appear here in real-time.
           </p>
         </div>
 
+        {/* High-Vibe Solid Purple CTA Button */}
         <button
           type="button"
           onClick={() => {
             triggerHaptic('light');
             onBrowseServices();
           }}
-          className="btn-pill btn-pill-action px-6 py-3 text-xs font-bold shadow-md"
+          className="px-7 py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-700 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-purple-600/25 active:scale-95 transition-all flex items-center justify-center gap-2"
         >
-          <ShoppingBag className="w-4 h-4 text-indigo-500" />
-          <span>Browse Services</span>
+          <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
+          <span className="tracking-wide">Browse Services</span>
         </button>
       </div>
     );
@@ -180,12 +185,12 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
                   <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
                     <span className="text-[10px] text-emerald-700 font-medium">Delivered to registered email</span>
                     <a
-                      href="https://t.me/AnyAi_Support"
+                      href="https://t.me/exo80"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-[#FF6B00] transition-colors underline"
                     >
-                      <span>If any problem, Contact Us</span>
+                      <span>If any problem, Contact Support (@exo80)</span>
                     </a>
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import { OrderScreen } from '@/components/OrderScreen';
 import { PaymentScreen } from '@/components/PaymentScreen';
 import { StatusScreen } from '@/components/StatusScreen';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { ContactModal } from '@/components/ContactModal';
 import { getTelegramWebApp, getTelegramUser } from '@/lib/telegram';
 import { recordVisitor } from '@/lib/store';
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment' | 'status'>('services');
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [isContactModalOpen, setIsContactModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const webApp = getTelegramWebApp();
@@ -69,16 +71,22 @@ export default function Home() {
       {/* Animated Brand Loading Screen Splash */}
       <LoadingScreen />
 
+      {/* Interactive Contact & Support Modal */}
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
+
       {/* Dynamic Ambient RGB Lighting System */}
       <RgbAtmosphere activeTab={activeTab === 'status' ? 'services' : activeTab} />
 
       {/* Main App Container Shell */}
       <div className="relative z-10 flex flex-col h-full w-full overflow-hidden">
         {/* Fixed Top Header (Never Scrolls) */}
-        <Header />
+        <Header onOpenContact={() => setIsContactModalOpen(true)} />
 
         {/* Scrollable Middle Content Body */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 overflow-y-auto custom-scrollbar overscroll-contain overscroll-y-contain">
           {activeTab === 'services' && (
             <ProductGrid cart={cart} onAddToCart={handleAddToCart} />
           )}
