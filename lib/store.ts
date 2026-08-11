@@ -306,25 +306,10 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
 
 // Clean Sequential Order ID Generator (#ORD-001, #ORD-002, #ORD-003...)
 export async function generateSequentialOrderId(): Promise<string> {
-  let nextNum = 1;
-
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { count, error } = await supabase.from('orders').select('*', { count: 'exact', head: true });
-      if (!error && typeof count === 'number') {
-        nextNum = count + 1;
-      }
-    } catch {
-      const local = getStoredOrders();
-      nextNum = local.length + 1;
-    }
-  } else {
-    const local = getStoredOrders();
-    nextNum = local.length + 1;
-  }
-
-  const padded = String(nextNum).padStart(3, '0');
-  return `#ORD-${padded}`;
+  // Order counts are private after RLS is enabled. Generate a short client ID;
+  // the server remains the only database writer and enforces uniqueness.
+  const random = crypto.getRandomValues(new Uint32Array(1))[0] % 10_000_000;
+  return `#ORD-${String(random).padStart(7, '0')}`;
 }
 
 export function addOrder(order: OrderPayload): void {
@@ -395,16 +380,11 @@ export function recordVisitor(user: { id: number; username?: string; first_name:
     localStorage.setItem(VISITORS_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event('ai_store_visitors_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      Promise.resolve(supabase.from('telegram_users').upsert({
-        telegram_id: user.id,
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        has_ordered: hasOrdered,
-        last_active_at: now
-      })).catch((err: unknown) => console.error('Supabase visitor sync error:', err));
-    }
+    void fetch('/api/visitors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user, hasOrdered })
+    }).catch(err => console.error('Visitor sync error:', err));
   } catch (e) {
     console.error('Error recording visitor:', e);
   }
