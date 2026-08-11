@@ -18,7 +18,7 @@ export const AdminOrdersView: React.FC = () => {
   const loadOrders = () => {
     setOrders(getStoredOrders());
     fetchOrdersFromSupabase().then((data) => {
-      if (data && data.length > 0) setOrders(data);
+      if (data && Array.isArray(data)) setOrders(data);
     });
   };
 

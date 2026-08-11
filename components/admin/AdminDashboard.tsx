@@ -6,9 +6,8 @@ import { Product } from '@/config/products';
 import { 
   getStoredProducts, saveStoredProducts, getStoredCategories, 
   saveStoredCategories, getStoredOrders, getStoredVisitors, getOnlineUsers24hCount,
-  fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchOrdersFromSupabase
+  fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchOrdersFromSupabase, syncAdminDatabase
 } from '@/lib/store';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 import { ProductEditorModal } from './ProductEditorModal';
 import { AdminOrdersView } from './AdminOrdersView';
@@ -155,9 +154,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     if (confirm('Are you sure you want to delete this product from store?')) {
       const updated = products.filter((p) => p.id !== productId);
       saveStoredProducts(updated);
-      if (isSupabaseConfigured && supabase) {
-        Promise.resolve(supabase.from('products').delete().eq('id', productId)).catch((err: unknown) => console.error('Supabase delete error:', err));
-      }
+      syncAdminDatabase('delete-product', { id: productId });
     }
   };
 

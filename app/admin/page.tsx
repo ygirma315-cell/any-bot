@@ -22,6 +22,7 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('ai_store_admin_authenticated');
+    void fetch('/api/admin/session', { method: 'DELETE' });
     setIsAuthenticated(false);
   };
 
