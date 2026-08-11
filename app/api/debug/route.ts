@@ -1,1 +1,35 @@
-﻿import { NextResponse } from "next/server"; export async function GET() { const botToken = process.env.TELEGRAM_BOT_TOKEN; const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID; const appUrl = process.env.NEXT_PUBLIC_APP_URL; return NextResponse.json({ TELEGRAM_BOT_TOKEN: botToken ? `SET (starts: ${botToken.substring(0,8)}...)` : "MISSING", TELEGRAM_ADMIN_CHAT_ID: adminChatId || "MISSING", NEXT_PUBLIC_APP_URL: appUrl || "MISSING" }); }
+import { NextResponse } from 'next/server';
+import { isSupabaseConfigured, getAdminSupabase } from '@/lib/supabase';
+
+export async function GET() {
+  const dbClient = getAdminSupabase();
+  let dbStatus = 'Not Configured';
+  let ordersCount = null;
+  let dbError = null;
+
+  if (isSupabaseConfigured && dbClient) {
+    try {
+      const { count, error } = await dbClient.from('orders').select('*', { count: 'exact', head: true });
+      if (error) {
+        dbStatus = 'Error';
+        dbError = error.message;
+      } else {
+        dbStatus = 'Connected Successfully!';
+        ordersCount = count;
+      }
+    } catch (e: any) {
+      dbStatus = 'Exception';
+      dbError = e.message;
+    }
+  }
+
+  return NextResponse.json({
+    isSupabaseConfigured,
+    hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    hasServiceKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    dbStatus,
+    ordersCount,
+    dbError
+  });
+}
