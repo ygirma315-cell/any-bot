@@ -93,25 +93,36 @@ async function handleUpdate(update: any) {
   // Only respond to /start command
   if (!text.startsWith('/start')) return;
 
-  const welcome = `🌟 <b>Welcome to AnyAi Store!</b> 🌟\n\n` +
+  const isHttps = APP_URL.startsWith('https://');
+
+  const welcome =
+    `🌟 <b>Welcome to AnyAi Store!</b> 🌟\n\n` +
     `👋 Hey ${name}! You've found your <b>#1 destination for premium digital services</b> at unbeatable prices.\n\n` +
     `🛒 <b>What we offer:</b>\n` +
     `• 🤖 ChatGPT Plus, Claude, Gemini AI Pro\n` +
     `• 🎨 Canva Pro, Midjourney, CapCut Pro\n` +
     `• 📺 YouTube Premium & more!\n\n` +
     `⚡ <i>Instant delivery · 100% warranty · Local & crypto payments</i>\n\n` +
-    `👇 <b>Tap the button below to open the store:</b>`;
+    `📢 <i>Join our channel for deals & updates: @anyaiplan</i>\n\n` +
+    `👇 <b>Choose an option below to get started:</b>`;
 
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: '🛍️ Open Digital Store', web_app: { url: APP_URL } }
-      ],
-      [
-        { text: '📞 Contact Admin', url: `https://t.me/exo80` }
-      ]
-    ]
-  };
+  // Build keyboard — web_app button only works with HTTPS links
+  const inlineRows: any[] = [];
+
+  if (isHttps) {
+    inlineRows.push([{ text: '🛍️ Open Digital Store', web_app: { url: APP_URL } }]);
+  }
+
+  // Join channel button (optional)
+  inlineRows.push([{ text: '📢 Join Our Channel', url: 'https://t.me/anyaiplan' }]);
+
+  // Contact row — Admin + Developer side by side
+  inlineRows.push([
+    { text: '📞 Contact Admin', url: 'https://t.me/exo80' },
+    { text: '👨‍💻 Developer', url: 'https://t.me/grpbuyer3' }
+  ]);
+
+  const keyboard = { inline_keyboard: inlineRows };
 
   await sendMessage(chatId, welcome, keyboard);
 }

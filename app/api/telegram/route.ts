@@ -15,27 +15,41 @@ export async function POST(request: Request) {
 
     if (update?.message?.text === '/start' || update?.message?.text?.startsWith('/start')) {
       const chatId = update.message.chat.id;
+      const firstName = update.message.from?.first_name || 'there';
       const botToken = process.env.TELEGRAM_BOT_TOKEN;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+      const isHttps = appUrl.startsWith('https://');
 
       if (botToken) {
+        const welcomeText =
+          `🌟 <b>Welcome to AnyAi Store!</b> 🌟\n\n` +
+          `👋 Hey ${firstName}! You've found your <b>#1 destination for premium digital services</b> at unbeatable prices.\n\n` +
+          `🛒 <b>What we offer:</b>\n` +
+          `• 🤖 ChatGPT Plus, Claude, Gemini AI Pro\n` +
+          `• 🎨 Canva Pro, Midjourney, CapCut Pro\n` +
+          `• 📺 YouTube Premium & more!\n\n` +
+          `⚡ <i>Instant delivery · 100% warranty · Local & crypto payments</i>\n\n` +
+          `📢 <i>Join our channel for deals & updates: @anyaiplan</i>\n\n` +
+          `👇 <b>Choose an option below to get started:</b>`;
+
+        const inlineRows: any[] = [];
+        if (isHttps) {
+          inlineRows.push([{ text: '🛍️ Open Digital Store', web_app: { url: appUrl } }]);
+        }
+        inlineRows.push([{ text: '📢 Join Our Channel', url: 'https://t.me/anyaiplan' }]);
+        inlineRows.push([
+          { text: '📞 Contact Admin', url: 'https://t.me/exo80' },
+          { text: '👨‍💻 Developer', url: 'https://t.me/grpbuyer3' }
+        ]);
+
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
-            text: `✨ <b>Welcome to AI Store!</b>\n\nBrowse our premium AI subscriptions and digital services at unbeatable prices:\n\n• ChatGPT Plus ($5)\n• Gemini AI Pro ($5)\n• Claude 3.5 Sonnet ($5)\n• Perplexity Pro ($5)\n• Canva Pro, CapCut & more!\n\nTap below to open the Mini App:`,
+            text: welcomeText,
             parse_mode: 'HTML',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: '🛍️ Open AI Store',
-                    web_app: { url: appUrl }
-                  }
-                ]
-              ]
-            }
+            reply_markup: { inline_keyboard: inlineRows }
           })
         });
       }
