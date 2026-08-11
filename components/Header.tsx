@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getTelegramUser, TelegramUser, triggerHaptic } from '@/lib/telegram';
-import { User, MessageCircle } from 'lucide-react';
+import { Headphones, MessageCircle } from 'lucide-react';
 
 interface HeaderProps {
   onOpenContact?: () => void;
@@ -40,51 +40,57 @@ export const Header: React.FC<HeaderProps> = ({ onOpenContact }) => {
   const firstLetter = (user.username || user.first_name || 'C').charAt(0).toUpperCase();
 
   return (
-    <header className="relative z-30 shrink-0 w-full px-4 py-3 bg-white/85 backdrop-blur-xl border-b border-slate-200/60 shadow-xs transition-all select-none touch-none overscroll-none">
+    <header className="relative z-30 shrink-0 w-full px-3.5 py-3 bg-white/90 backdrop-blur-xl border-b border-slate-200/70 shadow-xs transition-all select-none touch-none overscroll-none">
       <div className="flex items-center justify-between gap-2">
         {/* BUY AI STORE Header Title & Custom Unified AI Emblem Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white flex items-center justify-center p-0.5 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white flex items-center justify-center p-0.5 shrink-0">
             <Image
               src="/assets/buy_ai_store_logo.png"
               alt="AnyAi STORE Logo"
-              width={40}
-              height={40}
+              width={36}
+              height={36}
               className="object-cover w-full h-full rounded-lg"
             />
           </div>
 
           <div>
-            <h1 className="heading-font text-lg font-extrabold tracking-tight text-slate-900 leading-none">
+            <h1 className="heading-font text-base font-extrabold tracking-tight text-slate-900 leading-none">
               AnyAi STORE
             </h1>
-            <p className="text-[11px] font-semibold text-indigo-600 tracking-wide mt-0.5">
-              Premium Digital & AI Subscriptions
+            <p className="text-[10px] font-bold text-indigo-600 tracking-tight mt-0.5">
+              Digital & AI Services
             </p>
           </div>
         </div>
 
-        {/* Circular Clickable Customer / User Badge Pill */}
-        <button
-          type="button"
-          onClick={() => {
-            triggerHaptic('light');
-            if (onOpenContact) onOpenContact();
-          }}
-          className="flex items-center gap-1.5 p-1 pr-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white border border-slate-700/80 hover:border-[#FF6B00] shadow-md transition-all transform active:scale-95 group"
-          title="Click for Support & Contacts"
-        >
-          {/* Outer Circle Avatar */}
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FF6B00] to-indigo-500 flex items-center justify-center text-[10px] font-black text-white shadow-xs shrink-0 relative">
-            <span>{firstLetter}</span>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-slate-900" />
+        {/* Right Action Shell: Customer User Badge + Dedicated Contact Us Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Customer User Badge Pill */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 shadow-xs">
+            <div className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[9px] font-black shrink-0 relative">
+              <span>{firstLetter}</span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 border border-white" />
+            </div>
+            <span className="text-[10.5px] font-bold text-slate-800 truncate max-w-[85px]">
+              {displayName}
+            </span>
           </div>
 
-          <span className="text-[11px] font-extrabold text-slate-100 truncate max-w-[100px] group-hover:text-orange-300 transition-colors">
-            {displayName}
-          </span>
-          <MessageCircle className="w-3.5 h-3.5 text-orange-400 opacity-80 group-hover:opacity-100 shrink-0" />
-        </button>
+          {/* Dedicated Contact Us Button */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              if (onOpenContact) onOpenContact();
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF6B00] via-orange-500 to-amber-500 hover:from-[#E66000] hover:to-orange-600 text-white text-[10.5px] font-extrabold shadow-sm hover:shadow-md transition-all active:scale-95 shrink-0"
+            title="Open Support & Contact Channels"
+          >
+            <Headphones className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+            <span className="tracking-tight">Contact Us</span>
+          </button>
+        </div>
       </div>
     </header>
   );
