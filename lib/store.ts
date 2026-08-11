@@ -224,7 +224,14 @@ export function getStoredOrders(): OrderPayload[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(ORDERS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed: OrderPayload[] = JSON.parse(raw);
+    // Discard old legacy format orders (e.g. ORD-2026...) so user starts 100% fresh with #ORD-
+    const clean = parsed.filter(o => o && typeof o.orderId === 'string' && o.orderId.startsWith('#ORD-'));
+    if (clean.length !== parsed.length) {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(clean));
+    }
+    return clean;
   } catch {
     return [];
   }
@@ -248,9 +255,16 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       .select('*, order_items(*)')
       .order('created_at', { ascending: false });
 
-    if (error || !data) {
+    if (error) {
       console.warn('Supabase orders fetch error, fallback to local:', error);
       return getStoredOrders();
+    }
+
+    if (!data || data.length === 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ORDERS_KEY, JSON.stringify([]));
+      }
+      return [];
     }
 
     // Fetch user details for order telegram_user_id

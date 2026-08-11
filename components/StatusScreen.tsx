@@ -16,7 +16,9 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
   const loadOrders = () => {
     setOrders(getStoredOrders());
     fetchOrdersFromSupabase().then((data) => {
-      if (data && data.length > 0) setOrders(data);
+      if (Array.isArray(data)) {
+        setOrders(data);
+      }
     });
   };
 
