@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
 
-import { getStoredAdminCredentials, fetchAdminCredentialsFromSupabase } from '@/lib/store';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -15,25 +14,28 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  useEffect(() => {
-    fetchAdminCredentialsFromSupabase().catch(() => {});
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
       setError('Please enter both username and password.');
       return;
     }
 
-    const { username: validUsername, password: validPassword } = getStoredAdminCredentials();
-
-    if (username.trim().toLowerCase() === validUsername.trim().toLowerCase() && password === validPassword) {
+    try {
+      const response = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (!response.ok) {
+        setError('Invalid username or password.');
+        return;
+      }
       setError('');
       sessionStorage.setItem('ai_store_admin_authenticated', 'true');
       onLoginSuccess();
-    } else {
-      setError(`Invalid username or password.`);
+    } catch {
+      setError('Unable to reach the secure admin login. Please try again.');
     }
   };
 

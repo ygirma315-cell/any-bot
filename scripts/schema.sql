@@ -114,7 +114,9 @@ INSERT INTO public.admin_settings (id, admin_username, admin_password_hash)
 VALUES (1, 'admin', 'admin123')
 ON CONFLICT (id) DO NOTHING;
 
--- 10. Enable Row Level Security (RLS) & Add Universal Access Policies
+-- 10. Enable Row Level Security (RLS) & grant minimum public catalogue access
+-- Orders, visitor records, and admin settings are deliberately private. Access
+-- them only from Next.js server routes using SUPABASE_SERVICE_ROLE_KEY.
 ALTER TABLE public.telegram_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -123,13 +125,21 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow all public telegram_users" ON public.telegram_users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public products" ON public.products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public payment_methods" ON public.payment_methods FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public order_items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all public admin_settings" ON public.admin_settings FOR ALL USING (true) WITH CHECK (true);
+REVOKE ALL ON TABLE public.telegram_users FROM anon, authenticated;
+REVOKE ALL ON TABLE public.categories FROM anon, authenticated;
+REVOKE ALL ON TABLE public.products FROM anon, authenticated;
+REVOKE ALL ON TABLE public.payment_methods FROM anon, authenticated;
+REVOKE ALL ON TABLE public.orders FROM anon, authenticated;
+REVOKE ALL ON TABLE public.order_items FROM anon, authenticated;
+REVOKE ALL ON TABLE public.admin_settings FROM anon, authenticated;
+
+GRANT SELECT ON TABLE public.categories TO anon, authenticated;
+GRANT SELECT ON TABLE public.products TO anon, authenticated;
+GRANT SELECT ON TABLE public.payment_methods TO anon, authenticated;
+
+CREATE POLICY "Public can read categories" ON public.categories FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public can read available products" ON public.products FOR SELECT TO anon, authenticated USING (available = true);
+CREATE POLICY "Public can read active payment methods" ON public.payment_methods FOR SELECT TO anon, authenticated USING (is_active = true);
 
 -- 11. Seed Initial Categories
 INSERT INTO public.categories (name, sort_order) VALUES

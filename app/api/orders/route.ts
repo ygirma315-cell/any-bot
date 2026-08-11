@@ -40,14 +40,18 @@ export async function POST(request: Request) {
     if (isSupabaseConfigured && dbClient) {
       try {
         if (orderPayload.telegramUser?.id) {
-          await dbClient.from('telegram_users').upsert({
-            telegram_id: orderPayload.telegramUser.id,
-            username: orderPayload.telegramUser.username || null,
-            first_name: orderPayload.telegramUser.first_name || 'Customer',
-            last_name: orderPayload.telegramUser.last_name || null,
-            has_ordered: true,
-            last_active_at: new Date().toISOString()
-          }, { onConflict: 'telegram_id' }).catch(err => console.warn('telegram_users upsert warning:', err));
+          try {
+            await dbClient.from('telegram_users').upsert({
+              telegram_id: orderPayload.telegramUser.id,
+              username: orderPayload.telegramUser.username || null,
+              first_name: orderPayload.telegramUser.first_name || 'Customer',
+              last_name: orderPayload.telegramUser.last_name || null,
+              has_ordered: true,
+              last_active_at: new Date().toISOString()
+            }, { onConflict: 'telegram_id' });
+          } catch (err) {
+            console.warn('telegram_users upsert warning:', err);
+          }
         }
 
         const orderDataToInsert = {

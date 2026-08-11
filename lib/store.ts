@@ -10,6 +10,20 @@ const ORDERS_KEY = 'buy_ai_store_orders';
 const VISITORS_KEY = 'buy_ai_store_visitors';
 const ADMIN_PASSWORD_KEY = 'buy_ai_store_admin_password';
 
+export function syncAdminDatabase(action: string, payload: unknown): void {
+  if (typeof window === 'undefined') return;
+  void fetch('/api/admin/database', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload })
+  }).then(async response => {
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || 'Admin database update failed.');
+    }
+  }).catch(error => console.error('Admin database sync error:', error));
+}
+
 export const DEFAULT_CATEGORIES = [
   'All',
   'AI Assistants',
@@ -33,32 +47,30 @@ export function getStoredProducts(): Product[] {
   }
 }
 
-export function saveStoredProducts(products: Product[]): void {
+export function saveStoredProducts(products: Product[], syncRemote = true): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
     window.dispatchEvent(new Event('ai_store_products_updated'));
     
-    if (isSupabaseConfigured && supabase) {
-      const records = products.map(p => ({
-        id: p.id,
-        name: p.name,
-        short_description: p.shortDescription,
-        full_description: p.fullDescription,
-        price: p.price,
-        currency: p.currency,
-        warranty: p.warranty,
-        warranty_days: p.warrantyDays,
-        is_warranty: p.isWarranty,
-        available: p.available,
-        stock: p.stock,
-        category: p.category,
-        logo_path: p.logoPath,
-        accent_color: p.accentColor,
-        features: p.features
-      }));
-      Promise.resolve(supabase.from('products').upsert(records)).catch((err: unknown) => console.error('Supabase products sync error:', err));
-    }
+    const records = products.map(p => ({
+      id: p.id,
+      name: p.name,
+      short_description: p.shortDescription,
+      full_description: p.fullDescription,
+      price: p.price,
+      currency: p.currency,
+      warranty: p.warranty,
+      warranty_days: p.warrantyDays,
+      is_warranty: p.isWarranty,
+      available: p.available,
+      stock: p.stock,
+      category: p.category,
+      logo_path: p.logoPath,
+      accent_color: p.accentColor,
+      features: p.features
+    }));
+    if (syncRemote) syncAdminDatabase('save-products', records);
   } catch (e) {
     console.error('Error saving products:', e);
   }
@@ -88,7 +100,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       features: Array.isArray(p.features) ? p.features : []
     }));
 
-    saveStoredProducts(mapped);
+    saveStoredProducts(mapped, false);
     return mapped;
   } catch (err) {
     console.error('Error fetching products from Supabase:', err);
@@ -111,19 +123,14 @@ export function getStoredCategories(): string[] {
   }
 }
 
-export function saveStoredCategories(categories: string[]): void {
+export function saveStoredCategories(categories: string[], syncRemote = true): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
     window.dispatchEvent(new Event('ai_store_categories_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      const records = categories.filter(c => c !== 'All').map((name, index) => ({
-        name,
-        sort_order: index
-      }));
-      Promise.resolve(supabase.from('categories').upsert(records, { onConflict: 'name' })).catch((err: unknown) => console.error('Supabase categories sync error:', err));
-    }
+    const records = categories.filter(c => c !== 'All').map((name, index) => ({ name, sort_order: index }));
+    if (syncRemote) syncAdminDatabase('save-categories', records);
   } catch (e) {
     console.error('Error saving categories:', e);
   }
@@ -137,7 +144,7 @@ export async function fetchCategoriesFromSupabase(): Promise<string[]> {
 
     const categoryNames = ['All', ...data.map((c: any) => c.name)];
     const uniqueNames = Array.from(new Set(categoryNames));
-    saveStoredCategories(uniqueNames);
+    saveStoredCategories(uniqueNames, false);
     return uniqueNames;
   } catch (err) {
     console.error('Error fetching categories from Supabase:', err);
@@ -165,28 +172,19 @@ export function getStoredPaymentMethods(): PaymentMethod[] {
   }
 }
 
-export function saveStoredPaymentMethods(methods: PaymentMethod[]): void {
+export function saveStoredPaymentMethods(methods: PaymentMethod[], syncRemote = true): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(PAYMENTS_KEY, JSON.stringify(methods));
     window.dispatchEvent(new Event('ai_store_payments_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      const records = methods.map((m, index) => ({
-        id: m.id,
-        name: m.name,
-        subtitle: m.subtitle,
-        badge: m.badge,
-        logo_path: m.logoPath,
-        color: m.color,
-        account_id: m.accountId,
-        account_name: m.accountName,
-        network: m.network,
-        instructions: m.instructions,
-        sort_order: index
-      }));
-      Promise.resolve(supabase.from('payment_methods').upsert(records)).catch((err: unknown) => console.error('Supabase payments sync error:', err));
-    }
+    const records = methods.map((m, index) => ({
+      id: m.id, name: m.name, subtitle: m.subtitle, badge: m.badge,
+      logo_path: m.logoPath, color: m.color, account_id: m.accountId,
+      account_name: m.accountName, network: m.network,
+      instructions: m.instructions, sort_order: index
+    }));
+    if (syncRemote) syncAdminDatabase('save-payment-methods', records);
   } catch (e) {
     console.error('Error saving payment methods:', e);
   }
@@ -211,7 +209,7 @@ export async function fetchPaymentMethodsFromSupabase(): Promise<PaymentMethod[]
       instructions: Array.isArray(m.instructions) ? m.instructions : []
     }));
 
-    saveStoredPaymentMethods(mapped);
+    saveStoredPaymentMethods(mapped, false);
     return mapped;
   } catch (err) {
     console.error('Error fetching payment methods from Supabase:', err);
@@ -254,15 +252,11 @@ export function saveStoredOrders(orders: OrderPayload[]): void {
 export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredOrders();
   try {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase orders fetch error, fallback to local:', error);
+    const response = await fetch('/api/admin/database?resource=orders');
+    if (!response.ok) {
       return getStoredOrders();
     }
+    const { data } = await response.json();
 
     if (!data || data.length === 0) {
       if (typeof window !== 'undefined') {
@@ -271,27 +265,8 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       return [];
     }
 
-    // Fetch user details for order telegram_user_id
-    const userIds = Array.from(new Set(data.map((o: any) => o.telegram_user_id).filter(Boolean)));
-    const userMap: Record<string, any> = {};
-    if (userIds.length > 0) {
-      try {
-        const { data: usersData } = await supabase
-          .from('telegram_users')
-          .select('*')
-          .in('telegram_id', userIds);
-        if (usersData) {
-          usersData.forEach((u: any) => {
-            userMap[String(u.telegram_id)] = u;
-          });
-        }
-      } catch {
-        // ignore user details fetch error
-      }
-    }
-
     const mapped: OrderPayload[] = data.map((o: any) => {
-      const userObj = userMap[String(o.telegram_user_id)] || {};
+      const userObj = o.telegram_users || {};
       return {
         orderId: o.order_id || `#${o.order_number || 1}`,
         deliveryEmail: o.delivery_email || undefined,
@@ -363,64 +338,6 @@ export function addOrder(order: OrderPayload): void {
     updated = [order, ...currentOrders];
   }
   saveStoredOrders(updated);
-
-  if (isSupabaseConfigured && supabase) {
-    (async () => {
-      try {
-        if (order.telegramUser?.id) {
-          await supabase.from('telegram_users').upsert({
-            telegram_id: order.telegramUser.id,
-            username: order.telegramUser.username,
-            first_name: order.telegramUser.first_name,
-            last_name: order.telegramUser.last_name,
-            has_ordered: true,
-            last_active_at: new Date().toISOString()
-          }).catch(err => console.warn('telegram_users upsert warning:', err));
-        }
-
-        // Insert order record (if order_id exists, fallback insert without clashing)
-        let { data: insertedOrder, error: orderErr } = await supabase.from('orders').insert({
-          order_id: order.orderId,
-          telegram_user_id: order.telegramUser?.id || null,
-          delivery_email: order.deliveryEmail || null,
-          subtotal: order.subtotal,
-          total: order.total,
-          payment_method: order.paymentMethod,
-          status: order.status
-        }).select('id').maybeSingle();
-
-        if (orderErr) {
-          // If collision or FK error occurs, retry with timestamp-backed unique order_id
-          const fallbackId = `${order.orderId}-${Date.now().toString().slice(-4)}`;
-          const retry = await supabase.from('orders').upsert({
-            order_id: fallbackId,
-            telegram_user_id: null,
-            delivery_email: order.deliveryEmail || null,
-            subtotal: order.subtotal,
-            total: order.total,
-            payment_method: order.paymentMethod,
-            status: order.status
-          }, { onConflict: 'order_id' }).select('id').maybeSingle();
-          insertedOrder = retry.data;
-          orderErr = retry.error;
-        }
-
-        if (!orderErr && insertedOrder && order.items?.length) {
-          const itemsToInsert = order.items.map(item => ({
-            order_id: insertedOrder.id,
-            product_id: item.id,
-            product_name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            warranty: item.warranty
-          }));
-          await supabase.from('order_items').insert(itemsToInsert).catch(err => console.warn('order_items insert warning:', err));
-        }
-      } catch (err: unknown) {
-        console.error('Supabase order sync error:', err);
-      }
-    })();
-  }
 }
 
 // --- VISITORS ---
@@ -522,14 +439,10 @@ export function saveStoredAdminCredentials(username: string, password: string): 
     localStorage.setItem(ADMIN_PASSWORD_KEY, password);
     window.dispatchEvent(new Event('ai_store_admin_password_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      Promise.resolve(supabase.from('admin_settings').upsert({
-        id: 1,
-        admin_username: username,
-        admin_password_hash: password,
-        updated_at: new Date().toISOString()
-      })).catch((err: unknown) => console.error('Supabase admin credentials sync error:', err));
-    }
+    syncAdminDatabase('save-credentials', {
+      id: 1, admin_username: username, admin_password_hash: password,
+      updated_at: new Date().toISOString()
+    });
   } catch (e) {
     console.error('Error saving admin credentials:', e);
   }
@@ -541,9 +454,11 @@ export function saveStoredAdminPassword(password: string): void {
 }
 
 export async function fetchAdminCredentialsFromSupabase(): Promise<{ username: string; password: string }> {
-  if (!isSupabaseConfigured || !supabase) return getStoredAdminCredentials();
+  if (!isSupabaseConfigured) return getStoredAdminCredentials();
   try {
-    const { data } = await supabase.from('admin_settings').select('admin_username, admin_password_hash').eq('id', 1).single();
+    const response = await fetch('/api/admin/database?resource=credentials');
+    if (!response.ok) return getStoredAdminCredentials();
+    const { data } = await response.json();
     if (data) {
       const username = data.admin_username || 'admin';
       const password = data.admin_password_hash || 'admin123';
@@ -574,9 +489,7 @@ export function updateOrderStatus(orderId: string, status: OrderPayload['status'
   });
   saveStoredOrders(updated);
 
-  if (isSupabaseConfigured && supabase) {
-    Promise.resolve(supabase.from('orders').update({ status }).eq('order_id', orderId)).catch((err: unknown) => console.error('Supabase order status update error:', err));
-  }
+  syncAdminDatabase('update-order-status', { orderId, status });
 }
 
 export function clearAllOrders(): void {
@@ -585,9 +498,7 @@ export function clearAllOrders(): void {
     localStorage.removeItem(ORDERS_KEY);
     window.dispatchEvent(new Event('ai_store_orders_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      Promise.resolve(supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000')).catch((err: unknown) => console.error('Supabase clear orders error:', err));
-    }
+    syncAdminDatabase('clear-orders', {});
   } catch (e) {
     console.error('Error clearing orders:', e);
   }
@@ -599,9 +510,7 @@ export function clearAllVisitors(): void {
     localStorage.removeItem(VISITORS_KEY);
     window.dispatchEvent(new Event('ai_store_visitors_updated'));
 
-    if (isSupabaseConfigured && supabase) {
-      Promise.resolve(supabase.from('telegram_users').delete().neq('telegram_id', 0)).catch((err: unknown) => console.error('Supabase clear visitors error:', err));
-    }
+    syncAdminDatabase('clear-visitors', {});
   } catch (e) {
     console.error('Error clearing visitors:', e);
   }
