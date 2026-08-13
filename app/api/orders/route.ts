@@ -3,15 +3,32 @@ import { sendTelegramAdminNotification, OrderPayload } from '@/lib/bot';
 import { getAdminSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export async function GET(request: Request) {
-  const orderId = new URL(request.url).searchParams.get('orderId');
-  if (!orderId) {
-    return NextResponse.json({ success: false, error: 'Missing orderId parameter.' }, { status: 400 });
+  const params = new URL(request.url).searchParams;
+  const orderId = params.get('orderId');
+  const telegramId = params.get('telegramId');
+  if (!orderId && !telegramId) {
+    return NextResponse.json({ success: false, error: 'Missing orderId or telegramId parameter.' }, { status: 400 });
   }
   const dbClient = getAdminSupabase();
   if (!isSupabaseConfigured || !dbClient) {
     return NextResponse.json({ success: false, error: 'Database not available.' }, { status: 503 });
   }
   try {
+    if (telegramId) {
+      const tgId = Number(telegramId);
+      if (!Number.isFinite(tgId) || tgId === 987654321) {
+        return NextResponse.json({ success: false, error: 'Invalid telegramId parameter.' }, { status: 400 });
+      }
+      const { data, error } = await dbClient
+        .from('orders')
+        .select('*, order_items(*), telegram_users(*)')
+        .eq('telegram_user_id', tgId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, data: data || [] });
+    }
     const { data, error } = await dbClient
       .from('orders')
       .select('order_id, status, created_at, updated_at')

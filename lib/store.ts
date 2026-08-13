@@ -212,6 +212,39 @@ export function saveStoredOrders(orders: OrderPayload[]): void {
   }
 }
 
+export function mapOrdersFromDb(rows: any[]): OrderPayload[] {
+  return rows.map((o: any) => {
+    const userObj = o.telegram_users && typeof o.telegram_users === 'object' ? o.telegram_users : {};
+    return {
+      orderId: o.order_id || `#${o.order_number || 1}`,
+      deliveryEmail: o.delivery_email || undefined,
+      telegramUser: {
+        id: o.telegram_user_id || 987654321,
+        username: userObj.username || 'customer',
+        first_name: userObj.first_name || 'Customer',
+        last_name: userObj.last_name || ''
+      },
+      items: (o.order_items || []).map((item: any) => ({
+        id: item.product_id || '',
+        name: item.product_name || 'AI Product',
+        price: Number(item.price) || 0,
+        quantity: item.quantity || 1,
+        warranty: item.warranty || 'Warranty Included'
+      })),
+      subtotal: Number(o.subtotal) || 0,
+      total: Number(o.total) || 0,
+      paymentMethod: typeof o.payment_method === 'object' && o.payment_method ? o.payment_method : {
+        id: 'cbe',
+        name: 'Payment',
+        accountName: 'AI Store',
+        accountId: '1000'
+      },
+      timestamp: new Date(o.created_at).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC',
+      status: o.status || 'Pending'
+    };
+  });
+}
+
 export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredOrders();
   try {
@@ -225,36 +258,7 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       return [];
     }
 
-    const mapped: OrderPayload[] = data.map((o: any) => {
-      const userObj = o.telegram_users || {};
-      return {
-        orderId: o.order_id || `#${o.order_number || 1}`,
-        deliveryEmail: o.delivery_email || undefined,
-        telegramUser: {
-          id: o.telegram_user_id || 987654321,
-          username: userObj.username || 'customer',
-          first_name: userObj.first_name || 'Customer',
-          last_name: userObj.last_name || ''
-        },
-        items: (o.order_items || []).map((item: any) => ({
-          id: item.product_id || '',
-          name: item.product_name || 'AI Product',
-          price: Number(item.price) || 0,
-          quantity: item.quantity || 1,
-          warranty: item.warranty || 'Warranty Included'
-        })),
-        subtotal: Number(o.subtotal) || 0,
-        total: Number(o.total) || 0,
-        paymentMethod: typeof o.payment_method === 'object' && o.payment_method ? o.payment_method : {
-          id: 'cbe',
-          name: 'Payment',
-          accountName: 'AI Store',
-          accountId: '1000'
-        },
-        timestamp: new Date(o.created_at).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC',
-        status: o.status || 'Pending'
-      };
-    });
+    const mapped = mapOrdersFromDb(data);
 
     saveStoredOrders(mapped);
     return mapped;
