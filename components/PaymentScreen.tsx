@@ -118,15 +118,20 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       // Save locally to shared store so status screen and admin view update instantly
       addOrder(payload);
 
-      // Submit order via backend API
-      try {
-        await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch {
-        // backend notification optional
+      // Submit order via backend API (retries if Supabase save fails so it lands in the DB)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const body = await res.json().catch(() => ({}));
+          if (res.ok && body.dbSaved !== false) break;
+        } catch {
+          // retry below
+        }
+        if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
       }
 
       try {
