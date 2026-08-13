@@ -16,6 +16,13 @@
 .env.*
 !.env.example
 
+# opencode config & API credential files (NEVER COMMIT)
+opencode.json
+opencode.jsonc
+*.paypal*
+*token*.json
+*oauth*.json
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
