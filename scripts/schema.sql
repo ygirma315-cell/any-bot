@@ -51,6 +51,7 @@ CREATE TABLE public.products (
     logo_path TEXT,
     accent_color TEXT,
     features JSONB DEFAULT '[]'::jsonb,
+    sort_order INT DEFAULT 0,
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

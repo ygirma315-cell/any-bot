@@ -6,7 +6,7 @@ import { Product } from '@/config/products';
 import { 
   getStoredProducts, saveStoredProducts, getStoredCategories, 
   saveStoredCategories, getStoredOrders, getStoredVisitors, getOnlineUsers24hCount,
-  fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchOrdersFromSupabase, syncAdminDatabase
+  fetchProductsFromSupabase, fetchCategoriesFromSupabase, fetchOrdersFromSupabase, fetchVisitorsFromSupabase, syncAdminDatabase
 } from '@/lib/store';
 
 import { ProductEditorModal } from './ProductEditorModal';
@@ -18,7 +18,7 @@ import {
   Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, 
   Tag, ExternalLink, Sparkles, FolderPlus, Layers, Bell, UserCheck, 
   ArrowUpRight, Edit2, X, Users, Settings, Grid, Home, Store, Activity, Menu,
-  RefreshCw, Check
+  RefreshCw, Check, ArrowUp, ArrowDown
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -37,6 +37,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
   const [visitorsCount, setVisitorsCount] = useState<number>(0);
   const [online24hCount, setOnline24hCount] = useState<number>(0);
+  const [visitors, setVisitors] = useState(getStoredVisitors());
 
   // Modal state
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
@@ -97,6 +98,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           setOrdersCount(o.length);
           setPendingOrdersCount(o.filter(item => item.status === 'Pending' || item.status === 'Payment Submitted').length);
         }
+      }),
+      fetchVisitorsFromSupabase().then(v => {
+        if (v) {
+          setVisitors(v);
+          setVisitorsCount(v.length);
+          setOnline24hCount(v.filter(item => new Date(item.lastActive) >= new Date(Date.now() - 24 * 60 * 60 * 1000)).length);
+        }
       })
     ]).finally(() => {
       setTimeout(() => setIsRefreshing(false), 500);
@@ -121,22 +129,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     window.addEventListener('ai_store_orders_updated', handleOrdersUpdate);
     window.addEventListener('ai_store_visitors_updated', handleVisitorsUpdate);
 
+    // Live poll visitor activity from the database so active/online counts stay fresh.
+    const visitorInterval = setInterval(() => {
+      fetchVisitorsFromSupabase().then(v => {
+        if (v) {
+          setVisitors(v);
+          setVisitorsCount(v.length);
+          setOnline24hCount(v.filter(item => new Date(item.lastActive) >= new Date(Date.now() - 24 * 60 * 60 * 1000)).length);
+        }
+      });
+    }, 5000);
+
     return () => {
       window.removeEventListener('ai_store_products_updated', handleProductsUpdate);
       window.removeEventListener('ai_store_categories_updated', handleOrdersUpdate);
       window.removeEventListener('ai_store_orders_updated', handleOrdersUpdate);
       window.removeEventListener('ai_store_visitors_updated', handleVisitorsUpdate);
+      clearInterval(visitorInterval);
     };
   }, []);
 
   const handleSaveProduct = (updatedProduct: Product) => {
     const existingIndex = products.findIndex((p) => p.id === updatedProduct.id);
+    const oldSort = existingIndex >= 0 ? Number(products[existingIndex].sortOrder) || 0 : 0;
+    let finalProduct = updatedProduct;
+    let swappedProduct: Product | null = null;
+
+    // If another product already holds the requested sort position, ask the
+    // admin whether to swap places before saving.
+    const occupant = products.find(p => p.id !== updatedProduct.id && Number(p.sortOrder) === Number(updatedProduct.sortOrder));
+    if (occupant && Number(updatedProduct.sortOrder) > 0) {
+      const shouldSwap = window.confirm(
+        `"${occupant.name}" is already number ${updatedProduct.sortOrder}. Do you want to swap places?`
+      );
+      if (shouldSwap) {
+        const occupantTarget = existingIndex >= 0
+          ? oldSort
+          : Math.max(...products.map(p => Number(p.sortOrder) || 0), 0) + 1;
+        swappedProduct = { ...occupant, sortOrder: occupantTarget };
+      } else {
+        finalProduct = { ...updatedProduct, sortOrder: oldSort };
+      }
+    }
+
     let updatedProducts: Product[];
     if (existingIndex >= 0) {
-      updatedProducts = [...products];
-      updatedProducts[existingIndex] = updatedProduct;
+      updatedProducts = products.map((p) => {
+        if (p.id === finalProduct.id) return finalProduct;
+        if (swappedProduct && p.id === swappedProduct.id) return swappedProduct;
+        return p;
+      });
     } else {
-      updatedProducts = [updatedProduct, ...products];
+      updatedProducts = [...products, finalProduct];
+      if (swappedProduct) {
+        updatedProducts = updatedProducts.map(p => p.id === swappedProduct.id ? swappedProduct : p);
+      }
     }
 
     saveStoredProducts(updatedProducts);
@@ -156,6 +203,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       saveStoredProducts(updated);
       syncAdminDatabase('delete-product', { id: productId });
     }
+  };
+
+  // Swap a product's sort position with its direct neighbour (up/down).
+  const moveProduct = (index: number, dir: -1 | 1) => {
+    const targetIndex = index + dir;
+    if (targetIndex < 0 || targetIndex >= products.length) return;
+    const sorted = [...products].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    const current = sorted[index];
+    const target = sorted[targetIndex];
+    if (!current || !target) return;
+    const currentSort = Number(current.sortOrder) || 0;
+    const targetSort = Number(target.sortOrder) || 0;
+    saveStoredProducts(products.map(p => {
+      if (p.id === current.id) return { ...p, sortOrder: targetSort };
+      if (p.id === target.id) return { ...p, sortOrder: currentSort };
+      return p;
+    }));
   };
 
 
@@ -571,11 +635,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <th className="py-3 px-3">WARRANTY</th>
                         <th className="py-3 px-3">STATUS</th>
                         <th className="py-3 px-3">STOCK</th>
+                        <th className="py-3 px-3">SORT</th>
                         <th className="py-3 px-3 text-right">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                      {products.map((prod) => {
+                      {[...products]
+                        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                        .map((prod, idx) => {
                         const isWarrantyActive = prod.isWarranty !== false;
 
                         return (
@@ -639,6 +706,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                               {prod.stock} in stock
                             </td>
 
+                            {/* Sort Position */}
+                            <td className="py-3.5 px-3">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] font-black text-slate-900 bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 min-w-[2rem] text-center">
+                                  {prod.sortOrder || idx + 1}
+                                </span>
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveProduct(idx, -1)}
+                                    disabled={idx === 0}
+                                    className="text-slate-400 hover:text-[#FF6B00] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Move up"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveProduct(idx, 1)}
+                                    disabled={idx >= products.length - 1}
+                                    className="text-slate-400 hover:text-[#FF6B00] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Move down"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+
                             {/* Actions */}
                             <td className="py-3.5 px-3 text-right">
                               <div className="flex items-center justify-end gap-1.5">
@@ -685,7 +781,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {/* ==================== 5. USERS & ONLINE ACTIVITY PAGE ==================== */}
           {activeTab === 'users' && (
             <AdminUsersView
-              visitors={getStoredVisitors()}
+              visitors={visitors}
               onlineCount24h={online24hCount}
             />
           )}
@@ -701,6 +797,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         <ProductEditorModal
           product={editingProduct}
           categories={categories}
+          defaultSortOrder={products.length > 0 ? Math.max(...products.map(p => Number(p.sortOrder) || 0), 0) + 1 : 1}
           onSave={handleSaveProduct}
           onClose={() => {
             setIsEditorOpen(false);

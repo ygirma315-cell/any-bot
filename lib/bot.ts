@@ -116,61 +116,122 @@ We will verify your payment and send access credentials to your email address sh
   };
 }
 
-export async function sendTelegramOrderStatusUpdate(orderId: string, status: string, customer: { telegramId: number; first_name?: string } | null): Promise<{ success: boolean; message: string }> {
+export async function sendTelegramOrderStatusUpdate(
+  orderId: string,
+  status: string,
+  customer: { telegramId?: number; first_name?: string; username?: string } | null,
+  deliveryEmail?: string,
+  extraDetails?: { items?: { name: string; quantity: number }[]; total?: number }
+): Promise<{ success: boolean; message: string }> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
-  if (botToken && adminChatId && !botToken.includes('123456789:ABCdef')) {
-    if (customer && customer.telegramId && customer.telegramId !== 987654321) {
-      const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
-      const isRejected = status === 'Rejected' || status === 'Cancelled';
-      let statusText: string;
-      let emoji: string;
-      if (isAccepted) {
-        emoji = '✅';
-        statusText = 'ORDER ACCEPTED! Your product credentials have been released to your delivery email. Enjoy!';
-      } else if (isRejected) {
-        emoji = '❌';
-        statusText = 'ORDER REJECTED. We could not confirm your payment. Please check your payment and contact support (@exo80).';
-      } else {
-        emoji = '🟡';
-        statusText = `Your order status changed to ${status}.`;
-      }
+  if (!botToken || botToken.includes('123456789:ABCdef')) {
+    console.warn('Telegram status update skipped: TELEGRAM_BOT_TOKEN is missing or invalid in process.env');
+    return { success: false, message: 'TELEGRAM_BOT_TOKEN not configured.' };
+  }
 
-      const customerTextMessage = `
-${emoji} <b>ORDER STATUS UPDATE — AnyAi Store</b>
+  const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
+  const isRejected = status === 'Rejected' || status === 'Cancelled';
+  let statusEmoji: string;
+  let headline: string;
+  let customerStatusText: string;
 
-Hey ${escapeHtml(customer.first_name || 'there')}, your order <code>${escapeHtml(orderId)}</code> has been updated.
+  if (isAccepted) {
+    statusEmoji = '✅';
+    headline = 'ORDER ACCEPTED — AnyAi Store';
+    customerStatusText = 'Your payment has been verified and your product credentials / subscription access have been released to your delivery email. Enjoy!';
+  } else if (isRejected) {
+    statusEmoji = '❌';
+    headline = 'ORDER REJECTED — AnyAi Store';
+    customerStatusText = 'We could not verify your payment. Please check your transaction details and contact admin support (@exo80) if you need assistance.';
+  } else {
+    statusEmoji = '🟡';
+    headline = 'ORDER STATUS UPDATE — AnyAi Store';
+    customerStatusText = `Your order status has been updated to ${status}.`;
+  }
 
-<b>New Status:</b> ${emoji} <b>${escapeHtml(status)}</b>
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const validCustomerTgId = customer?.telegramId && customer.telegramId !== 987654321 ? customer.telegramId : null;
+  const customerName = customer?.first_name || (customer?.username ? `@${customer.username}` : 'there');
 
-${statusText}
+  // 1. Send Direct Message to Customer (if valid Telegram user ID)
+  if (validCustomerTgId) {
+    const customerTextMessage = `
+${statusEmoji} <b>${headline}</b>
+
+Hey ${escapeHtml(customerName)}!
+
+<b>Order ID:</b> <code>${escapeHtml(orderId)}</code>
+<b>Delivery Target:</b> <code>${escapeHtml(deliveryEmail || 'Your Email')}</code>
+<b>Status:</b> ${statusEmoji} <b>${escapeHtml(status)}</b>
+
+${customerStatusText}
+`;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: validCustomerTgId,
+          text: customerTextMessage,
+          parse_mode: 'HTML'
+        })
+      });
+      const data = await res.json();
+      console.log('Telegram Customer Status Update Result:', data);
+    } catch (err) {
+      console.error('Error sending customer status update DM:', err);
+    }
+  } else {
+    console.log('Customer DM skipped (no valid customer Telegram ID for order', orderId, ')');
+  }
+
+  // 2. Also send Status Change notification to Admin Chat (if configured)
+  if (adminChatId) {
+    // If the customer is the admin themselves and already received the customer DM above,
+    // skip sending duplicate message to the same chat
+    const isSameAsCustomer = validCustomerTgId && String(validCustomerTgId) === String(adminChatId);
+    if (!isSameAsCustomer) {
+      const customerDisplay = customer?.username
+        ? `@${customer.username}`
+        : customer?.first_name
+        ? `${customer.first_name}${validCustomerTgId ? ` (${validCustomerTgId})` : ''}`
+        : validCustomerTgId
+        ? `ID: ${validCustomerTgId}`
+        : 'Web Guest';
+
+      const adminTextMessage = `
+🔔 <b>ORDER STATUS UPDATED</b>
+
+<b>Order ID:</b> <code>${escapeHtml(orderId)}</code>
+<b>New Status:</b> ${statusEmoji} <b>${escapeHtml(status)}</b>
+<b>Customer:</b> ${escapeHtml(customerDisplay)}
+<b>Delivery Email:</b> <code>${escapeHtml(deliveryEmail || 'Not Provided')}</code>
+${extraDetails?.total ? `<b>Total:</b> $${extraDetails.total.toFixed(2)}\n` : ''}
+<i>Updated from Admin Dashboard at ${new Date().toLocaleTimeString()}</i>
 `;
 
       try {
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        const res = await fetch(url, {
+        const adminRes = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: customer.telegramId,
-            text: customerTextMessage,
+            chat_id: adminChatId,
+            text: adminTextMessage,
             parse_mode: 'HTML'
           })
         });
-        const data = await res.json();
-        console.log('Telegram Order Status Update Result:', data);
+        const adminData = await adminRes.json();
+        console.log('Telegram Admin Status Update Log Result:', adminData);
       } catch (err) {
-        console.error('Error sending order status update:', err);
+        console.error('Error sending admin status update notification:', err);
       }
-    } else {
-      console.warn('Order status update skipped: no valid customer Telegram ID for order', orderId);
     }
-  } else {
-    console.warn('Telegram status update skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_ADMIN_CHAT_ID missing in process.env');
   }
 
-  return { success: true, message: 'Status notification sent.' };
+  return { success: true, message: 'Status notifications processed.' };
 }
 
 function escapeHtml(str: string): string {

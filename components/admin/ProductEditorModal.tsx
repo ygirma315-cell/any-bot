@@ -7,6 +7,7 @@ import { ShieldCheck, ShieldAlert, X, Plus, Trash2, Check, AlertCircle } from 'l
 interface ProductEditorModalProps {
   product: Product | null; // null for creating new
   categories: string[];
+  defaultSortOrder?: number;
   onSave: (product: Product) => void;
   onClose: () => void;
 }
@@ -14,6 +15,7 @@ interface ProductEditorModalProps {
 export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
   product,
   categories,
+  defaultSortOrder = 1,
   onSave,
   onClose
 }) => {
@@ -23,6 +25,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
   const [customCategory, setCustomCategory] = useState<string>('');
   const [price, setPrice] = useState<number>(5.0);
   const [stock, setStock] = useState<number>(10);
+  const [sortOrder, setSortOrder] = useState<number>(1);
   const [shortDescription, setShortDescription] = useState<string>('');
   const [fullDescription, setFullDescription] = useState<string>('');
   
@@ -46,6 +49,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       setCategory(product.category || 'AI Assistants');
       setPrice(product.price);
       setStock(product.stock);
+      setSortOrder(Number(product.sortOrder) || 1);
       setShortDescription(product.shortDescription);
       setFullDescription(product.fullDescription);
       setIsWarranty(product.isWarranty !== false);
@@ -53,8 +57,9 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       setFeatures(product.features || []);
     } else {
       setId(`prod-${Date.now().toString().slice(-6)}`);
+      setSortOrder(defaultSortOrder);
     }
-  }, [product]);
+  }, [product, defaultSortOrder]);
 
   const handleAddFeature = () => {
     if (features.length < 4) {
@@ -93,6 +98,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       warrantyDays: isWarranty ? Number(warrantyDays) : 0,
       available: stock > 0,
       stock: Number(stock),
+      sortOrder: Number(sortOrder) || 0,
       category: finalCategory,
       logoPath: product?.logoPath || '/assets/products/chatgpt.png',
       accentColor: product?.accentColor || 'rgba(249, 115, 22, 0.4)',
@@ -175,8 +181,8 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             />
           </div>
 
-          {/* Price & Stock Row */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Price, Stock & Sort Position Row */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="font-bold text-slate-700 block mb-1">
                 Price ($ USD) <span className="text-rose-500">*</span>
@@ -202,6 +208,20 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                 onChange={(e) => setStock(Number(e.target.value))}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
               />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Sort Position (#)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(Number(e.target.value))}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
+              />
+              <p className="text-[10px] text-slate-400 font-semibold mt-1">Position on store page (1 = first)</p>
             </div>
           </div>
 

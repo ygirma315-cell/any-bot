@@ -31,6 +31,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
         setError('Invalid username or password.');
         return;
       }
+      const data = await response.json().catch(() => ({}));
+      if (data.token) {
+        sessionStorage.setItem('ai_store_admin_token', data.token);
+      }
       setError('');
       sessionStorage.setItem('ai_store_admin_authenticated', 'true');
       onLoginSuccess();

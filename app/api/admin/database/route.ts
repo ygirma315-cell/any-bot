@@ -10,7 +10,9 @@ function unauthorized() {
 }
 
 function adminClient(request: Request) {
-  if (!isValidAdminSession(request.headers.get('cookie'))) return null;
+  const cookie = request.headers.get('cookie');
+  const auth = request.headers.get('authorization');
+  if (!isValidAdminSession(cookie, auth)) return null;
   if (!isSupabaseConfigured) return null;
   return getAdminSupabase();
 }
@@ -55,24 +57,88 @@ export async function POST(request: Request) {
     } else if (action === 'save-credentials') {
       ({ error } = await db.from('admin_settings').upsert(payload));
     } else if (action === 'update-order-status') {
-      ({ error } = await db.from('orders').update({ status: payload.status }).eq('order_id', payload.orderId));
-      if (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      const { orderId, status } = payload || {};
+      if (!orderId || !status) {
+        return NextResponse.json({ success: false, error: 'orderId and status are required.' }, { status: 400 });
       }
-      const { data: customer } = await db
+
+      // 1. Update status and timestamp in Supabase orders table
+      const updatePayload = {
+        status: String(status),
+        updated_at: new Date().toISOString()
+      };
+
+      const { error: updateErr, data: updatedRows } = await db
         .from('orders')
-        .select('telegram_users(telegram_id, first_name)')
-        .eq('order_id', payload.orderId)
-        .maybeSingle();
-      const telegramUser = customer?.telegram_users as unknown as { telegram_id?: number; first_name?: string } | null;
+        .update(updatePayload)
+        .eq('order_id', orderId)
+        .select('*, telegram_users(*)');
+
+      if (updateErr) {
+        console.error('Error updating order in database:', updateErr);
+        return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
+      }
+
+      // 2. Fetch order details to ensure we have customer info
+      let orderRow = updatedRows && updatedRows[0] ? updatedRows[0] : null;
+      if (!orderRow) {
+        const { data: fallbackRow } = await db
+          .from('orders')
+          .select('*, telegram_users(*)')
+          .eq('order_id', orderId)
+          .maybeSingle();
+        orderRow = fallbackRow;
+      }
+
+      let customer: { telegramId?: number; first_name?: string; username?: string } | null = null;
+      let deliveryEmail: string | undefined = orderRow?.delivery_email || payload.deliveryEmail || undefined;
+
+      const tgUserId = orderRow?.telegram_user_id || payload.telegramUser?.id;
+      if (tgUserId && Number(tgUserId) !== 987654321) {
+        let firstName = payload.telegramUser?.first_name || 'Customer';
+        let username = payload.telegramUser?.username || undefined;
+
+        try {
+          const { data: tgUser } = await db
+            .from('telegram_users')
+            .select('telegram_id, first_name, username')
+            .eq('telegram_id', tgUserId)
+            .maybeSingle();
+          if (tgUser) {
+            if (tgUser.first_name) firstName = tgUser.first_name;
+            if (tgUser.username) username = tgUser.username;
+          }
+        } catch (tgErr) {
+          console.warn('Could not query telegram_users table:', tgErr);
+        }
+
+        customer = {
+          telegramId: Number(tgUserId),
+          first_name: firstName,
+          username
+        };
+      } else if (payload.telegramUser) {
+        customer = {
+          telegramId: payload.telegramUser.id ? Number(payload.telegramUser.id) : undefined,
+          first_name: payload.telegramUser.first_name,
+          username: payload.telegramUser.username
+        };
+      }
+
+      const extraDetails = {
+        total: orderRow?.total ? Number(orderRow.total) : payload.total ? Number(payload.total) : undefined
+      };
+
+      // 3. Dispatch Telegram notifications (Customer DM + Admin alert)
       await sendTelegramOrderStatusUpdate(
-        String(payload.orderId),
-        String(payload.status),
-        telegramUser && telegramUser.telegram_id
-          ? { telegramId: telegramUser.telegram_id, first_name: telegramUser.first_name }
-          : null
+        String(orderId),
+        String(status),
+        customer,
+        deliveryEmail,
+        extraDetails
       );
-      return NextResponse.json({ success: true });
+
+      return NextResponse.json({ success: true, orderId, status });
     } else if (action === 'clear-orders') {
       ({ error } = await db.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
     } else if (action === 'clear-visitors') {

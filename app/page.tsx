@@ -45,6 +45,14 @@ export default function Home() {
     const { user } = getTelegramUser();
     if (user) {
       recordVisitor(user);
+
+      // Heartbeat: refresh last_active_at every 60s while the user is on the
+      // site, so they stay counted as an ACTIVE user (last 24h) and only drop
+      // off 24 hours after they actually leave.
+      const heartbeat = setInterval(() => {
+        recordVisitor(user);
+      }, 60000);
+      return () => clearInterval(heartbeat);
     }
   }, []);
 

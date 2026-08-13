@@ -23,9 +23,9 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
             <Activity className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <span className="text-[10.5px] font-bold text-slate-400 tracking-wider uppercase block">ONLINE USERS (PAST 24 HOURS)</span>
+            <span className="text-[10.5px] font-bold text-slate-400 tracking-wider uppercase block">ACTIVE USERS (LAST 24 HOURS)</span>
             <p className="heading-font text-2xl font-black text-slate-900 mt-0.5">{onlineCount24h}</p>
-            <p className="text-[11px] text-purple-600 font-bold mt-0.5">Active visitors in last 24h</p>
+            <p className="text-[11px] text-purple-600 font-bold mt-0.5">Active now (last 24h) — drops off 24h after leaving</p>
           </div>
         </div>
 
@@ -35,9 +35,9 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10.5px] font-bold text-slate-400 tracking-wider uppercase block">REGISTERED USERS</span>
+            <span className="text-[10.5px] font-bold text-slate-400 tracking-wider uppercase block">TOTAL USERS</span>
             <p className="heading-font text-2xl font-black text-slate-900 mt-0.5">{visitors.length}</p>
-            <p className="text-[11px] text-indigo-600 font-bold mt-0.5">Total Telegram accounts tracked</p>
+            <p className="text-[11px] text-indigo-600 font-bold mt-0.5">Everyone who opened the site (even once)</p>
           </div>
         </div>
       </div>

@@ -61,18 +61,32 @@ export const AdminOrdersView: React.FC = () => {
     };
   }, []);
 
-  const handleAcceptOrder = (order: OrderPayload) => {
-    updateOrderStatus(order.orderId, 'Accepted');
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+
+  const handleAcceptOrder = async (order: OrderPayload) => {
+    setProcessingOrderId(order.orderId);
+    const result = await updateOrderStatus(order.orderId, 'Accepted', order);
+    setProcessingOrderId(null);
     const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
     
-    setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Product credentials released to ${userHandle} via email/Telegram.`);
+    if (result && !result.success) {
+      setToastMessage(`⚠️ Warning: Status updated locally, but server returned: ${result.error}`);
+    } else {
+      setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Bot notification sent to ${userHandle}.`);
+    }
     setTimeout(() => setToastMessage(null), 4500);
   };
 
-  const handleRejectOrder = (order: OrderPayload) => {
-    updateOrderStatus(order.orderId, 'Rejected');
-    setToastMessage(`❌ Order ${order.orderId} REJECTED.`);
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleRejectOrder = async (order: OrderPayload) => {
+    setProcessingOrderId(order.orderId);
+    const result = await updateOrderStatus(order.orderId, 'Rejected', order);
+    setProcessingOrderId(null);
+    if (result && !result.success) {
+      setToastMessage(`⚠️ Warning: Status updated locally, but server returned: ${result.error}`);
+    } else {
+      setToastMessage(`❌ Order ${order.orderId} REJECTED. Bot notification sent.`);
+    }
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -211,19 +225,21 @@ export const AdminOrdersView: React.FC = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               type="button"
+                              disabled={processingOrderId === order.orderId}
                               onClick={() => handleAcceptOrder(order)}
-                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-xs"
+                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-xs"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Accept</span>
+                              <span>{processingOrderId === order.orderId ? 'Saving...' : 'Accept'}</span>
                             </button>
                             <button
                               type="button"
+                              disabled={processingOrderId === order.orderId}
                               onClick={() => handleRejectOrder(order)}
-                              className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                              className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                             >
                               <XCircle className="w-3.5 h-3.5" />
-                              <span>Reject</span>
+                              <span>{processingOrderId === order.orderId ? 'Saving...' : 'Reject'}</span>
                             </button>
                           </div>
                         ) : isAccepted ? (

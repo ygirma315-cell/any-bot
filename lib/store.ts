@@ -31,18 +31,36 @@ export function clearLegacyLocalStorage(): void {
   });
 }
 
-export function syncAdminDatabase(action: string, payload: unknown): void {
-  if (typeof window === 'undefined') return;
-  void fetch('/api/admin/database', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, payload })
-  }).then(async response => {
+export function getAdminAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (typeof window !== 'undefined') {
+    const token = sessionStorage.getItem('ai_store_admin_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+}
+
+export async function syncAdminDatabase(action: string, payload: unknown): Promise<{ success: boolean; error?: string }> {
+  if (typeof window === 'undefined') return { success: false, error: 'Window undefined' };
+  try {
+    const headers = getAdminAuthHeaders();
+    const response = await fetch('/api/admin/database', {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify({ action, payload })
+    });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.error || 'Admin database update failed.');
+      throw new Error(body.error || `Admin database update failed with status ${response.status}`);
     }
-  }).catch(error => console.error('Admin database sync error:', error));
+    return { success: true };
+  } catch (error: any) {
+    console.error('Admin database sync error:', error);
+    return { success: false, error: error.message || 'Database update failed' };
+  }
 }
 
 export const DEFAULT_CATEGORIES = [
@@ -56,11 +74,11 @@ export const DEFAULT_CATEGORIES = [
 // --- PRODUCTS ---
 export function getStoredProducts(): Product[] {
   if (cachedProducts) return cachedProducts;
-  return PRODUCTS;
+  return [...PRODUCTS].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
 export function saveStoredProducts(products: Product[], syncRemote = true): void {
-  cachedProducts = products;
+  cachedProducts = [...products].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_products_updated'));
   }
@@ -80,7 +98,8 @@ export function saveStoredProducts(products: Product[], syncRemote = true): void
     category: p.category,
     logo_path: p.logoPath,
     accent_color: p.accentColor,
-    features: p.features
+    features: p.features,
+    sort_order: p.sortOrder || 0
   }));
   if (syncRemote) syncAdminDatabase('save-products', records);
 }
@@ -88,7 +107,7 @@ export function saveStoredProducts(products: Product[], syncRemote = true): void
 export async function fetchProductsFromSupabase(): Promise<Product[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredProducts();
   try {
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
     if (error || !data || data.length === 0) return getStoredProducts();
 
     const mapped: Product[] = data.map((p: any) => ({
@@ -106,9 +125,11 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
       category: p.category || 'General',
       logoPath: p.logo_path || '/assets/products/chatgpt.png',
       accentColor: p.accent_color || 'rgba(16, 163, 127, 0.4)',
-      features: Array.isArray(p.features) ? p.features : []
+      features: Array.isArray(p.features) ? p.features : [],
+      sortOrder: Number(p.sort_order) || 0
     }));
 
+    mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     saveStoredProducts(mapped, false);
     return mapped;
   } catch (err) {
@@ -248,7 +269,11 @@ export function mapOrdersFromDb(rows: any[]): OrderPayload[] {
 export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredOrders();
   try {
-    const response = await fetch('/api/admin/database?resource=orders');
+    const headers = getAdminAuthHeaders();
+    const response = await fetch('/api/admin/database?resource=orders', {
+      headers,
+      credentials: 'include'
+    });
     if (!response.ok) {
       return getStoredOrders();
     }
@@ -337,6 +362,38 @@ export function recordVisitor(user: { id: number; username?: string; first_name:
   }).catch(err => console.error('Visitor sync error:', err));
 }
 
+export async function fetchVisitorsFromSupabase(): Promise<VisitorRecord[]> {
+  if (!isSupabaseConfigured || !supabase) return getStoredVisitors();
+  try {
+    const headers = getAdminAuthHeaders();
+    const response = await fetch('/api/admin/database?resource=visitors', {
+      headers,
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      return getStoredVisitors();
+    }
+    const { data } = await response.json();
+    if (!data || data.length === 0) {
+      return [];
+    }
+    const mapped: VisitorRecord[] = data.map((v: any) => ({
+      telegramId: Number(v.telegram_id),
+      username: v.username || undefined,
+      first_name: v.first_name || 'Customer',
+      last_name: v.last_name || undefined,
+      lastActive: v.last_active_at || new Date().toISOString(),
+      hasOrdered: Boolean(v.has_ordered)
+    }));
+    sessionVisitors = mapped;
+    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+    return mapped;
+  } catch (err) {
+    console.error('Error fetching visitors from Supabase:', err);
+    return getStoredVisitors();
+  }
+}
+
 export function getOnlineUsers24hCount(): number {
   const visitors = getStoredVisitors();
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -383,7 +440,11 @@ export function saveStoredAdminPassword(password: string): void {
 export async function fetchAdminCredentialsFromSupabase(): Promise<{ username: string; password: string }> {
   if (!isSupabaseConfigured) return getStoredAdminCredentials();
   try {
-    const response = await fetch('/api/admin/database?resource=credentials');
+    const headers = getAdminAuthHeaders();
+    const response = await fetch('/api/admin/database?resource=credentials', {
+      headers,
+      credentials: 'include'
+    });
     if (!response.ok) return getStoredAdminCredentials();
     const { data } = await response.json();
     if (data) {
@@ -406,18 +467,46 @@ export async function fetchAdminPasswordFromSupabase(): Promise<string> {
   return creds.password;
 }
 
-export function updateOrderStatus(orderId: string, status: OrderPayload['status']): void {
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderPayload['status'],
+  existingOrder?: Partial<OrderPayload>
+): Promise<{ success: boolean; error?: string }> {
+  let updatedOrder: OrderPayload | undefined;
   sessionOrders = sessionOrders.map(order => {
     if (order.orderId === orderId) {
-      return { ...order, status };
+      updatedOrder = { ...order, ...existingOrder, status };
+      return updatedOrder;
     }
     return order;
   });
+
+  if (!updatedOrder && existingOrder) {
+    updatedOrder = {
+      orderId,
+      status,
+      telegramUser: existingOrder.telegramUser || { id: 987654321, first_name: 'Customer' },
+      items: existingOrder.items || [],
+      subtotal: existingOrder.subtotal || 0,
+      total: existingOrder.total || 0,
+      paymentMethod: existingOrder.paymentMethod || { id: 'binance', name: 'Payment', accountName: '', accountId: '' },
+      timestamp: existingOrder.timestamp || new Date().toISOString(),
+      deliveryEmail: existingOrder.deliveryEmail
+    };
+    sessionOrders = [updatedOrder, ...sessionOrders];
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_orders_updated'));
   }
 
-  syncAdminDatabase('update-order-status', { orderId, status });
+  return await syncAdminDatabase('update-order-status', {
+    orderId,
+    status,
+    telegramUser: updatedOrder?.telegramUser || existingOrder?.telegramUser,
+    deliveryEmail: updatedOrder?.deliveryEmail || existingOrder?.deliveryEmail,
+    total: updatedOrder?.total || existingOrder?.total
+  });
 }
 
 export function clearAllOrders(): void {

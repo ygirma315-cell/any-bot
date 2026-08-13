@@ -14,6 +14,7 @@ export interface Product {
   logoPath: string;
   accentColor: string;
   features: string[];
+  sortOrder: number;
 }
 
 export const PRODUCTS: Product[] = [
@@ -29,6 +30,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 14,
+    sortOrder: 1,
     category: 'AI Assistants',
     logoPath: '/assets/products/chatgpt.png',
     accentColor: 'rgba(16, 163, 127, 0.4)',
@@ -51,6 +53,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 9,
+    sortOrder: 3,
     category: 'AI Assistants',
     logoPath: '/assets/products/gemini.jpg',
     accentColor: 'rgba(74, 144, 226, 0.4)',
@@ -73,6 +76,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 11,
+    sortOrder: 2,
     category: 'AI Assistants',
     logoPath: '/assets/products/claude.png',
     accentColor: 'rgba(217, 119, 6, 0.4)',
@@ -95,6 +99,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 18,
+    sortOrder: 4,
     category: 'AI Search & Knowledge',
     logoPath: '/assets/products/perplexity.svg',
     accentColor: 'rgba(20, 184, 166, 0.4)',
@@ -117,6 +122,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 22,
+    sortOrder: 5,
     category: 'AI Design & Video',
     logoPath: '/assets/products/canva.svg',
     accentColor: 'rgba(124, 58, 237, 0.4)',
@@ -139,6 +145,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 15,
+    sortOrder: 6,
     category: 'AI Design & Video',
     logoPath: '/assets/products/capcut.svg',
     accentColor: 'rgba(236, 72, 153, 0.4)',
@@ -161,6 +168,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 7,
+    sortOrder: 7,
     category: 'AI Assistants',
     logoPath: '/assets/products/copilot.svg',
     accentColor: 'rgba(37, 99, 235, 0.4)',
@@ -183,6 +191,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 25,
+    sortOrder: 8,
     category: 'Media & Streaming',
     logoPath: '/assets/products/youtube.svg',
     accentColor: 'rgba(239, 68, 68, 0.4)',
@@ -205,6 +214,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 6,
+    sortOrder: 9,
     category: 'AI Design & Video',
     logoPath: '/assets/products/midjourney.svg',
     accentColor: 'rgba(168, 85, 247, 0.4)',
@@ -227,6 +237,7 @@ export const PRODUCTS: Product[] = [
     isWarranty: true,
     available: true,
     stock: 16,
+    sortOrder: 10,
     category: 'AI Search & Knowledge',
     logoPath: '/assets/products/notion.svg',
     accentColor: 'rgba(30, 41, 59, 0.4)',

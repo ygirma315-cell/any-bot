@@ -23,12 +23,13 @@ export async function POST(request: Request) {
 
     const session = createAdminSession();
     if (!session) return NextResponse.json({ success: false, error: 'Server session is not configured.' }, { status: 503 });
-    const response = NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true, token: session });
+    const isHttps = request.url.startsWith('https://') || (process.env.NODE_ENV === 'production' && !request.url.includes('localhost'));
     response.cookies.set(ADMIN_SESSION_COOKIE, session, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/api/admin',
+      secure: isHttps,
+      sameSite: 'lax',
+      path: '/',
       maxAge: 60 * 60 * 8
     });
     return response;
@@ -39,6 +40,6 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
-  response.cookies.set(ADMIN_SESSION_COOKIE, '', { httpOnly: true, path: '/api/admin', maxAge: 0 });
+  response.cookies.set(ADMIN_SESSION_COOKIE, '', { httpOnly: true, path: '/', maxAge: 0 });
   return response;
 }

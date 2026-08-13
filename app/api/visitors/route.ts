@@ -11,12 +11,21 @@ export async function POST(request: Request) {
     if (!isSupabaseConfigured || !db) {
       return NextResponse.json({ success: false, error: 'Database is not configured.' }, { status: 503 });
     }
+    // Preserve the existing has_ordered flag — heartbeat pings (hasOrdered=false)
+    // must never downgrade a customer who already ordered.
+    const { data: existing } = await db
+      .from('telegram_users')
+      .select('has_ordered')
+      .eq('telegram_id', user.id)
+      .maybeSingle();
+    const finalHasOrdered = Boolean(hasOrdered) || Boolean(existing?.has_ordered);
+
     const { error } = await db.from('telegram_users').upsert({
       telegram_id: user.id,
       username: user.username || null,
       first_name: user.first_name,
       last_name: user.last_name || null,
-      has_ordered: Boolean(hasOrdered),
+      has_ordered: finalHasOrdered,
       last_active_at: new Date().toISOString()
     }, { onConflict: 'telegram_id' });
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });

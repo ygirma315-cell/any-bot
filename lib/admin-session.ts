@@ -20,12 +20,8 @@ export function createAdminSession(): string | null {
   return `${payload}.${sign(payload)}`;
 }
 
-export function isValidAdminSession(cookieHeader: string | null): boolean {
-  if (!cookieHeader || !signingSecret()) return false;
-  const cookie = cookieHeader.split(';').map(part => part.trim()).find(part => part.startsWith(`${ADMIN_SESSION_COOKIE}=`));
-  const token = cookie?.slice(ADMIN_SESSION_COOKIE.length + 1);
-  if (!token) return false;
-
+export function validateAdminToken(token: string | null | undefined): boolean {
+  if (!token || !signingSecret()) return false;
   const parts = token.split('.');
   if (parts.length !== 3 || parts[0] !== 'admin') return false;
   const expiresAt = Number(parts[1]);
@@ -35,6 +31,19 @@ export function isValidAdminSession(cookieHeader: string | null): boolean {
   const actualBuffer = Buffer.from(parts[2]);
   const expectedBuffer = Buffer.from(expected);
   return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
+}
+
+export function isValidAdminSession(cookieHeader: string | null, authHeader?: string | null): boolean {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (validateAdminToken(token)) return true;
+  }
+  if (cookieHeader) {
+    const cookie = cookieHeader.split(';').map(part => part.trim()).find(part => part.startsWith(`${ADMIN_SESSION_COOKIE}=`));
+    const token = cookie?.slice(ADMIN_SESSION_COOKIE.length + 1);
+    if (token && validateAdminToken(token)) return true;
+  }
+  return false;
 }
 
 export function passwordsMatch(input: string, stored: string): boolean {
