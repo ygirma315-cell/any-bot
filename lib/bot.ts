@@ -75,7 +75,7 @@ ${itemsFormatted}
       console.log('Telegram Admin Notification Result:', adminData);
 
       // 2. Also send order confirmation DM to customer if valid Telegram user ID
-      if (payload.telegramUser.id && payload.telegramUser.id !== 987654321 && String(payload.telegramUser.id) !== String(adminChatId)) {
+      if (payload.telegramUser.id && payload.telegramUser.id !== 987654321) {
         const customerTextMessage = `
 ✅ <b>ORDER RECEIVED — AnyAi Store</b>
 
@@ -87,15 +87,21 @@ Hey ${escapeHtml(payload.telegramUser.first_name)}! We received your payment req
 
 We will verify your payment and send access credentials to your email address shortly!
 `;
-        await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: payload.telegramUser.id,
-            text: customerTextMessage,
-            parse_mode: 'HTML'
-          })
-        }).catch(err => console.error('Error sending customer DM:', err));
+        try {
+          const customerRes = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: payload.telegramUser.id,
+              text: customerTextMessage,
+              parse_mode: 'HTML'
+            })
+          });
+          const customerData = await customerRes.json();
+          console.log('Telegram Customer Notification Result:', customerData);
+        } catch (err) {
+          console.error('Error sending customer DM:', err);
+        }
       }
     } catch (err) {
       console.error('Telegram notification fetch exception:', err);
@@ -115,7 +121,7 @@ export async function sendTelegramOrderStatusUpdate(orderId: string, status: str
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
   if (botToken && adminChatId && !botToken.includes('123456789:ABCdef')) {
-    if (customer && customer.telegramId && customer.telegramId !== 987654321 && String(customer.telegramId) !== String(adminChatId)) {
+    if (customer && customer.telegramId && customer.telegramId !== 987654321) {
       const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
       const isRejected = status === 'Rejected' || status === 'Cancelled';
       let statusText: string;
