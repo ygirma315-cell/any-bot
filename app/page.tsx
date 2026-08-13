@@ -12,7 +12,7 @@ import { StatusScreen } from '@/components/StatusScreen';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { ContactModal } from '@/components/ContactModal';
 import { getTelegramWebApp, getTelegramUser } from '@/lib/telegram';
-import { recordVisitor } from '@/lib/store';
+import { recordVisitor, clearLegacyLocalStorage } from '@/lib/store';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'services' | 'order' | 'payment' | 'status'>('services');
@@ -33,6 +33,10 @@ export default function Home() {
   };
 
   useEffect(() => {
+    // Wipe any old localStorage cache/orders left from previous versions -
+    // all store data now lives only in the database.
+    clearLegacyLocalStorage();
+
     const webApp = getTelegramWebApp();
     if (webApp) {
       webApp.ready();

@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { PaymentMethod } from '@/config/payments';
 import { Product } from '@/config/products';
 import { getTelegramUser, triggerHaptic } from '@/lib/telegram';
-import { addOrder, getStoredPaymentMethods, fetchPaymentMethodsFromSupabase, generateSequentialOrderId } from '@/lib/store';
+import { addOrder, getStoredPaymentMethods, fetchPaymentMethodsFromSupabase } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
 import { Copy, Check, ShieldCheck, ShieldAlert, CheckCircle2, Loader2, Sparkles, Mail, Send, Lock, FileText, Info, Wallet, ShoppingBag } from 'lucide-react';
 
@@ -23,10 +23,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   onBrowseServices,
   onViewStatus
 }) => {
-  const [methods, setMethods] = useState<PaymentMethod[]>(getStoredPaymentMethods());
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [dbStatus, setDbStatus] = useState<'checking' | 'available' | 'down'>('checking');
 
   const [submittedOrder, setSubmittedOrder] = useState<{
     orderId: string;
@@ -35,11 +36,29 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetchPaymentMethodsFromSupabase().then((data) => {
-      if (isMounted && data && data.length > 0) {
-        setMethods(data);
+
+    (async () => {
+      try {
+        const res = await fetch('/api/health');
+        const body = await res.json().catch(() => ({}));
+        if (!isMounted) return;
+        if (body.ok === true) {
+          setDbStatus('available');
+          const data = await fetchPaymentMethodsFromSupabase();
+          if (data && data.length > 0) {
+            setMethods(data);
+          }
+        } else {
+          setDbStatus('down');
+          setMethods([]);
+        }
+      } catch {
+        if (isMounted) {
+          setDbStatus('down');
+          setMethods([]);
+        }
       }
-    });
+    })();
 
     const handleUpdate = () => {
       const updated = getStoredPaymentMethods();
@@ -71,6 +90,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   const handlePaidSubmit = async () => {
     if (!selectedMethod || cart.length === 0) return;
 
+    if (dbStatus !== 'available') {
+      alert('Payment methods are not available right now because the database is not working. Please try again later.');
+      return;
+    }
+
     if (!userEmail.trim()) {
       alert('Delivery email is missing. Please return to the Order screen and enter your email.');
       return;
@@ -89,11 +113,10 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         last_name: user.last_name || ''
       };
 
-      const generatedOrderId = await generateSequentialOrderId();
       const orderTimestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC';
 
       const payload: OrderPayload = {
-        orderId: generatedOrderId,
+        orderId: '', // the server assigns the real sequential ID (#ORD-001, #ORD-002, ...)
         deliveryEmail: userEmail.trim(),
         telegramUser: updatedTelegramUser,
         items: cart.map((item) => ({
@@ -115,10 +138,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         status: 'Pending'
       };
 
-      // Save locally to shared store so status screen and admin view update instantly
-      addOrder(payload);
-
       // Submit order via backend API (retries if Supabase save fails so it lands in the DB)
+      let dbSaved = false;
+      let serverOrderId = '';
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           const res = await fetch('/api/orders', {
@@ -127,12 +149,25 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
             body: JSON.stringify(payload)
           });
           const body = await res.json().catch(() => ({}));
-          if (res.ok && body.dbSaved !== false) break;
+          if (res.ok && body.dbSaved === true) {
+            dbSaved = true;
+            if (body.orderId) serverOrderId = body.orderId;
+            break;
+          }
         } catch {
           // retry below
         }
         if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
       }
+
+      if (!dbSaved) {
+        alert('Payment methods are not available right now because the database is not working. Please try again later.');
+        return;
+      }
+
+      // Only add to the session view once the order is safely in the database
+      payload.orderId = serverOrderId;
+      addOrder(payload);
 
       try {
         confetti({
@@ -145,7 +180,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       }
 
       setSubmittedOrder({
-        orderId: generatedOrderId,
+        orderId: serverOrderId,
         timestamp: orderTimestamp
       });
       onOrderCompleted();
@@ -247,6 +282,25 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           {cart.length > 0 ? 'Confirm delivery email & choose payment method' : 'Supported payment methods'}
         </p>
       </div>
+
+      {/* Database Availability Banner */}
+      {dbStatus === 'checking' && (
+        <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 font-semibold flex items-center gap-2 animate-fadeIn">
+          <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
+          <span>Checking payment availability&hellip;</span>
+        </div>
+      )}
+      {dbStatus === 'down' && (
+        <div className="p-4 bg-rose-50/90 rounded-2xl border-2 border-rose-300 text-xs space-y-1.5 animate-fadeIn">
+          <p className="font-extrabold text-rose-900 flex items-center gap-1.5">
+            <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>Payment methods are not available</span>
+          </p>
+          <p className="text-[11.5px] font-semibold text-rose-800 leading-relaxed">
+            The store database is temporarily not working, so orders cannot be placed right now. Please try again later.
+          </p>
+        </div>
+      )}
 
       {/* Prompt Banner when cart is empty */}
       {cart.length === 0 && (

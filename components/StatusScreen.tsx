@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle2, XCircle, ShoppingBag, ShieldCheck, ShieldAlert, Sparkles, RefreshCw, Mail, User } from 'lucide-react';
-import { getStoredOrders, fetchOrdersFromSupabase } from '@/lib/store';
+import { getStoredOrders } from '@/lib/store';
 import { OrderPayload } from '@/lib/bot';
 import { triggerHaptic } from '@/lib/telegram';
 
@@ -14,11 +14,28 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
   const [orders, setOrders] = useState<OrderPayload[]>([]);
 
   const loadOrders = () => {
-    setOrders(getStoredOrders());
-    fetchOrdersFromSupabase().then((data) => {
-      if (Array.isArray(data)) {
-        setOrders(data);
-      }
+    const sessionOrders = getStoredOrders();
+    setOrders(sessionOrders);
+
+    const orderIds = sessionOrders.map(o => o.orderId).filter(Boolean);
+    if (orderIds.length === 0) return;
+
+    Promise.all(
+      orderIds.map(id =>
+        fetch(`/api/orders?orderId=${encodeURIComponent(id)}`)
+          .then(r => r.json())
+          .catch(() => null)
+      )
+    ).then(results => {
+      setOrders(prev =>
+        prev.map(order => {
+          const res = results.find(r => r && r.success && r.data && r.data.order_id === order.orderId);
+          if (res && res.data.status && res.data.status !== order.status) {
+            return { ...order, status: res.data.status };
+          }
+          return order;
+        })
+      );
     });
   };
 
@@ -28,8 +45,11 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
     const handleOrdersUpdate = () => loadOrders();
     window.addEventListener('ai_store_orders_updated', handleOrdersUpdate);
 
+    const interval = setInterval(loadOrders, 5000);
+
     return () => {
       window.removeEventListener('ai_store_orders_updated', handleOrdersUpdate);
+      clearInterval(interval);
     };
   }, []);
 

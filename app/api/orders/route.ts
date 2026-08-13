@@ -2,10 +2,37 @@ import { NextResponse } from 'next/server';
 import { sendTelegramAdminNotification, OrderPayload } from '@/lib/bot';
 import { getAdminSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
+export async function GET(request: Request) {
+  const orderId = new URL(request.url).searchParams.get('orderId');
+  if (!orderId) {
+    return NextResponse.json({ success: false, error: 'Missing orderId parameter.' }, { status: 400 });
+  }
+  const dbClient = getAdminSupabase();
+  if (!isSupabaseConfigured || !dbClient) {
+    return NextResponse.json({ success: false, error: 'Database not available.' }, { status: 503 });
+  }
+  try {
+    const { data, error } = await dbClient
+      .from('orders')
+      .select('order_id, status, created_at, updated_at')
+      .eq('order_id', orderId)
+      .maybeSingle();
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ success: false, error: 'Order not found.' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, data });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Internal Server Error.' }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderId: incomingOrderId, deliveryEmail, telegramUser, items, total, subtotal, paymentMethod } = body;
+    const { deliveryEmail, telegramUser, items, total, subtotal, paymentMethod } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -21,7 +48,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const orderId = incomingOrderId || `#1`;
+    // The server always assigns the sequential order ID (#ORD-001, #ORD-002, ...)
+    // based on the highest order number currently in the database.
+    const dbClient = getAdminSupabase();
+
+    let nextNumber = 1;
+    if (isSupabaseConfigured && dbClient) {
+      try {
+        const { data: latest } = await dbClient
+          .from('orders')
+          .select('order_number')
+          .order('order_number', { ascending: false })
+          .limit(1);
+        if (latest && latest.length > 0 && typeof latest[0].order_number === 'number') {
+          nextNumber = latest[0].order_number + 1;
+        }
+      } catch (err) {
+        console.warn('Failed to read latest order number:', err);
+      }
+    }
+
+    const orderId = `#ORD-${String(nextNumber).padStart(3, '0')}`;
 
     const orderPayload: OrderPayload = {
       orderId,
@@ -34,9 +81,6 @@ export async function POST(request: Request) {
       timestamp: new Date().toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC',
       status: 'Pending'
     };
-
-    // 1. Sync order directly into Supabase DB on server side using admin client
-    const dbClient = getAdminSupabase();
     let dbSaved = false;
     let isFreshOrder = false;
     if (isSupabaseConfigured && dbClient) {
@@ -83,13 +127,23 @@ export async function POST(request: Request) {
             .select('id')
             .maybeSingle();
 
+          // Concurrent order race: the number was taken by someone else.
+          // Re-read the latest number and retry once with the next one.
           if (orderErr || !insertedOrder) {
-            console.warn('First order insert attempt warning, retrying with fallback:', orderErr);
-            const fallbackId = `${orderPayload.orderId}-${Date.now().toString().slice(-4)}`;
-            const retryRow = { ...orderDataToInsert, order_id: fallbackId, telegram_user_id: null };
+            console.warn('Order insert raced or failed, retrying with next number:', orderErr);
+            const { data: latestRetry } = await dbClient
+              .from('orders')
+              .select('order_number')
+              .order('order_number', { ascending: false })
+              .limit(1);
+            const retryNumber = latestRetry && latestRetry.length > 0 && typeof latestRetry[0].order_number === 'number'
+              ? latestRetry[0].order_number + 1
+              : nextNumber + 1;
+            const retryId = `#ORD-${String(retryNumber).padStart(3, '0')}`;
+            orderPayload.orderId = retryId;
             const retry = await dbClient
               .from('orders')
-              .insert(retryRow)
+              .insert({ ...orderDataToInsert, order_id: retryId, telegram_user_id: null })
               .select('id')
               .maybeSingle();
             insertedOrder = retry.data;

@@ -3,12 +3,33 @@ import { PAYMENT_METHODS, PaymentMethod } from '@/config/payments';
 import { OrderPayload } from '@/lib/bot';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-const PRODUCTS_KEY = 'buy_ai_store_products';
-const CATEGORIES_KEY = 'buy_ai_store_categories';
-const PAYMENTS_KEY = 'buy_ai_store_payments';
-const ORDERS_KEY = 'buy_ai_store_orders';
-const VISITORS_KEY = 'buy_ai_store_visitors';
+const LEGACY_LOCAL_STORAGE_KEYS = [
+  'buy_ai_store_orders',
+  'buy_ai_store_visitors',
+  'buy_ai_store_products',
+  'buy_ai_store_categories',
+  'buy_ai_store_payments'
+];
 const ADMIN_PASSWORD_KEY = 'buy_ai_store_admin_password';
+
+let sessionOrders: OrderPayload[] = [];
+let cachedProducts: Product[] | null = null;
+let cachedCategories: string[] | null = null;
+let cachedPaymentMethods: PaymentMethod[] | null = null;
+let sessionVisitors: VisitorRecord[] = [];
+
+// Removes ALL lingering website data (old orders, payment pendings, caches)
+// from the visitor's browser storage. Data now lives only in the database.
+export function clearLegacyLocalStorage(): void {
+  if (typeof window === 'undefined') return;
+  LEGACY_LOCAL_STORAGE_KEYS.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore storage errors
+    }
+  });
+}
 
 export function syncAdminDatabase(action: string, payload: unknown): void {
   if (typeof window === 'undefined') return;
@@ -34,46 +55,34 @@ export const DEFAULT_CATEGORIES = [
 
 // --- PRODUCTS ---
 export function getStoredProducts(): Product[] {
-  if (typeof window === 'undefined') return PRODUCTS;
-  try {
-    const raw = localStorage.getItem(PRODUCTS_KEY);
-    if (!raw) {
-      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(PRODUCTS));
-      return PRODUCTS;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return PRODUCTS;
-  }
+  if (cachedProducts) return cachedProducts;
+  return PRODUCTS;
 }
 
 export function saveStoredProducts(products: Product[], syncRemote = true): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  cachedProducts = products;
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_products_updated'));
-    
-    const records = products.map(p => ({
-      id: p.id,
-      name: p.name,
-      short_description: p.shortDescription,
-      full_description: p.fullDescription,
-      price: p.price,
-      currency: p.currency,
-      warranty: p.warranty,
-      warranty_days: p.warrantyDays,
-      is_warranty: p.isWarranty,
-      available: p.available,
-      stock: p.stock,
-      category: p.category,
-      logo_path: p.logoPath,
-      accent_color: p.accentColor,
-      features: p.features
-    }));
-    if (syncRemote) syncAdminDatabase('save-products', records);
-  } catch (e) {
-    console.error('Error saving products:', e);
   }
+
+  const records = products.map(p => ({
+    id: p.id,
+    name: p.name,
+    short_description: p.shortDescription,
+    full_description: p.fullDescription,
+    price: p.price,
+    currency: p.currency,
+    warranty: p.warranty,
+    warranty_days: p.warrantyDays,
+    is_warranty: p.isWarranty,
+    available: p.available,
+    stock: p.stock,
+    category: p.category,
+    logo_path: p.logoPath,
+    accent_color: p.accentColor,
+    features: p.features
+  }));
+  if (syncRemote) syncAdminDatabase('save-products', records);
 }
 
 export async function fetchProductsFromSupabase(): Promise<Product[]> {
@@ -110,30 +119,18 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
 
 // --- CATEGORIES ---
 export function getStoredCategories(): string[] {
-  if (typeof window === 'undefined') return DEFAULT_CATEGORIES;
-  try {
-    const raw = localStorage.getItem(CATEGORIES_KEY);
-    if (!raw) {
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
-      return DEFAULT_CATEGORIES;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_CATEGORIES;
-  }
+  if (cachedCategories) return cachedCategories;
+  return DEFAULT_CATEGORIES;
 }
 
 export function saveStoredCategories(categories: string[], syncRemote = true): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  cachedCategories = categories;
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_categories_updated'));
-
-    const records = categories.filter(c => c !== 'All').map((name, index) => ({ name, sort_order: index }));
-    if (syncRemote) syncAdminDatabase('save-categories', records);
-  } catch (e) {
-    console.error('Error saving categories:', e);
   }
+
+  const records = categories.filter(c => c !== 'All').map((name, index) => ({ name, sort_order: index }));
+  if (syncRemote) syncAdminDatabase('save-categories', records);
 }
 
 export async function fetchCategoriesFromSupabase(): Promise<string[]> {
@@ -154,40 +151,23 @@ export async function fetchCategoriesFromSupabase(): Promise<string[]> {
 
 // --- PAYMENT METHODS ---
 export function getStoredPaymentMethods(): PaymentMethod[] {
-  if (typeof window === 'undefined') return PAYMENT_METHODS;
-  try {
-    const raw = localStorage.getItem(PAYMENTS_KEY);
-    if (!raw) {
-      localStorage.setItem(PAYMENTS_KEY, JSON.stringify(PAYMENT_METHODS));
-      return PAYMENT_METHODS;
-    }
-    const parsed: PaymentMethod[] = JSON.parse(raw);
-    const filtered = parsed.filter(m => m.id !== 'cbe' && m.id !== 'bank-transfer');
-    if (filtered.length !== parsed.length) {
-      localStorage.setItem(PAYMENTS_KEY, JSON.stringify(filtered));
-    }
-    return filtered;
-  } catch {
-    return PAYMENT_METHODS;
-  }
+  if (cachedPaymentMethods) return cachedPaymentMethods;
+  return PAYMENT_METHODS.filter(m => m.id !== 'cbe' && m.id !== 'bank-transfer');
 }
 
 export function saveStoredPaymentMethods(methods: PaymentMethod[], syncRemote = true): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(PAYMENTS_KEY, JSON.stringify(methods));
+  cachedPaymentMethods = methods;
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_payments_updated'));
-
-    const records = methods.map((m, index) => ({
-      id: m.id, name: m.name, subtitle: m.subtitle, badge: m.badge,
-      logo_path: m.logoPath, color: m.color, account_id: m.accountId,
-      account_name: m.accountName, network: m.network,
-      instructions: m.instructions, sort_order: index
-    }));
-    if (syncRemote) syncAdminDatabase('save-payment-methods', records);
-  } catch (e) {
-    console.error('Error saving payment methods:', e);
   }
+
+  const records = methods.map((m, index) => ({
+    id: m.id, name: m.name, subtitle: m.subtitle, badge: m.badge,
+    logo_path: m.logoPath, color: m.color, account_id: m.accountId,
+    account_name: m.accountName, network: m.network,
+    instructions: m.instructions, sort_order: index
+  }));
+  if (syncRemote) syncAdminDatabase('save-payment-methods', records);
 }
 
 export async function fetchPaymentMethodsFromSupabase(): Promise<PaymentMethod[]> {
@@ -218,46 +198,18 @@ export async function fetchPaymentMethodsFromSupabase(): Promise<PaymentMethod[]
 }
 
 // --- ORDERS ---
+// Orders NEVER touch localStorage. They live in the database only, and this
+// in-memory session list is used for the current browser session (updates
+// instantly after submit, disappears on reload - no phantom order data).
 export function getStoredOrders(): OrderPayload[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(ORDERS_KEY);
-    if (!raw) return [];
-    const parsed: OrderPayload[] = JSON.parse(raw);
-    // Purge any old legacy orders (like ORD-20260810-2217 or long IDs)
-    const clean = parsed.filter(o => {
-      if (!o || typeof o.orderId !== 'string') return false;
-      if (o.orderId.includes('2026') || o.orderId.length > 12) return false;
-      return o.orderId.startsWith('#ORD-');
-    });
-    if (clean.length !== parsed.length) {
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(clean));
-    }
-    return clean;
-  } catch {
-    return [];
-  }
+  return sessionOrders;
 }
 
 export function saveStoredOrders(orders: OrderPayload[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  sessionOrders = orders;
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_orders_updated'));
-  } catch (e) {
-    console.error('Error saving orders:', e);
   }
-}
-
-function backfillOrdersToSupabase(orders: OrderPayload[]): void {
-  if (typeof window === 'undefined') return;
-  orders.forEach(order => {
-    void fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(order)
-    }).catch(() => {});
-  });
 }
 
 export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
@@ -268,13 +220,9 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       return getStoredOrders();
     }
     const { data } = await response.json();
-    const localOrders = getStoredOrders();
 
     if (!data || data.length === 0) {
-      if (localOrders.length > 0) {
-        backfillOrdersToSupabase(localOrders);
-      }
-      return localOrders;
+      return [];
     }
 
     const mapped: OrderPayload[] = data.map((o: any) => {
@@ -308,41 +256,27 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       };
     });
 
-    const remoteIds = new Set(mapped.map(o => o.orderId));
-    const localOnly = localOrders.filter(o => !remoteIds.has(o.orderId));
-    const merged = [...mapped, ...localOnly];
-
-    if (localOnly.length > 0) {
-      backfillOrdersToSupabase(localOnly);
-    }
-
-    saveStoredOrders(merged);
-    return merged;
+    saveStoredOrders(mapped);
+    return mapped;
   } catch (err) {
     console.error('Error fetching orders from Supabase:', err);
     return getStoredOrders();
   }
 }
 
-// Clean Sequential Order ID Generator (#ORD-001, #ORD-002, #ORD-003...)
-export async function generateSequentialOrderId(): Promise<string> {
-  // Order counts are private after RLS is enabled. Generate a short client ID;
-  // the server remains the only database writer and enforces uniqueness.
-  const random = crypto.getRandomValues(new Uint32Array(1))[0] % 10_000_000;
-  return `#ORD-${String(random).padStart(7, '0')}`;
-}
+// Sequential order IDs (#ORD-001, #ORD-002, ...) are assigned by the server
+// (/api/orders) based on the real order_number sequence in the database.
 
 export function addOrder(order: OrderPayload): void {
-  const currentOrders = getStoredOrders();
-  const existingIndex = currentOrders.findIndex(o => o.orderId === order.orderId);
-  let updated: OrderPayload[];
+  const existingIndex = sessionOrders.findIndex(o => o.orderId === order.orderId);
   if (existingIndex >= 0) {
-    updated = [...currentOrders];
-    updated[existingIndex] = order;
+    sessionOrders[existingIndex] = order;
   } else {
-    updated = [order, ...currentOrders];
+    sessionOrders = [order, ...sessionOrders];
   }
-  saveStoredOrders(updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_orders_updated'));
+  }
 }
 
 // --- VISITORS ---
@@ -356,58 +290,47 @@ export interface VisitorRecord {
 }
 
 export function getStoredVisitors(): VisitorRecord[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(VISITORS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  return sessionVisitors;
 }
 
 export function recordVisitor(user: { id: number; username?: string; first_name: string; last_name?: string }, hasOrdered = false): void {
   if (typeof window === 'undefined') return;
-  try {
-    const visitors = getStoredVisitors();
-    const existingIndex = visitors.findIndex(v => v.telegramId === user.id);
-    const now = new Date().toISOString();
+  const visitors = getStoredVisitors();
+  const existingIndex = visitors.findIndex(v => v.telegramId === user.id);
+  const now = new Date().toISOString();
 
-    let updated: VisitorRecord[];
-    if (existingIndex >= 0) {
-      updated = [...visitors];
-      updated[existingIndex] = {
-        ...updated[existingIndex],
-        username: user.username || updated[existingIndex].username,
-        first_name: user.first_name || updated[existingIndex].first_name,
-        last_name: user.last_name || updated[existingIndex].last_name,
+  let updated: VisitorRecord[];
+  if (existingIndex >= 0) {
+    updated = [...visitors];
+    updated[existingIndex] = {
+      ...updated[existingIndex],
+      username: user.username || updated[existingIndex].username,
+      first_name: user.first_name || updated[existingIndex].first_name,
+      last_name: user.last_name || updated[existingIndex].last_name,
+      lastActive: now,
+      hasOrdered: hasOrdered || updated[existingIndex].hasOrdered
+    };
+  } else {
+    updated = [
+      {
+        telegramId: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
         lastActive: now,
-        hasOrdered: hasOrdered || updated[existingIndex].hasOrdered
-      };
-    } else {
-      updated = [
-        {
-          telegramId: user.id,
-          username: user.username,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          lastActive: now,
-          hasOrdered
-        },
-        ...visitors
-      ];
-    }
-
-    localStorage.setItem(VISITORS_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event('ai_store_visitors_updated'));
-
-    void fetch('/api/visitors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user, hasOrdered })
-    }).catch(err => console.error('Visitor sync error:', err));
-  } catch (e) {
-    console.error('Error recording visitor:', e);
+        hasOrdered
+      },
+      ...visitors
+    ];
   }
+  sessionVisitors = updated;
+  window.dispatchEvent(new Event('ai_store_visitors_updated'));
+
+  void fetch('/api/visitors', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user, hasOrdered })
+  }).catch(err => console.error('Visitor sync error:', err));
 }
 
 export function getOnlineUsers24hCount(): number {
@@ -480,40 +403,33 @@ export async function fetchAdminPasswordFromSupabase(): Promise<string> {
 }
 
 export function updateOrderStatus(orderId: string, status: OrderPayload['status']): void {
-  const currentOrders = getStoredOrders();
-  const updated = currentOrders.map(order => {
+  sessionOrders = sessionOrders.map(order => {
     if (order.orderId === orderId) {
       return { ...order, status };
     }
     return order;
   });
-  saveStoredOrders(updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_orders_updated'));
+  }
 
   syncAdminDatabase('update-order-status', { orderId, status });
 }
 
 export function clearAllOrders(): void {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(ORDERS_KEY);
-    window.dispatchEvent(new Event('ai_store_orders_updated'));
+  sessionOrders = [];
+  window.dispatchEvent(new Event('ai_store_orders_updated'));
 
-    syncAdminDatabase('clear-orders', {});
-  } catch (e) {
-    console.error('Error clearing orders:', e);
-  }
+  syncAdminDatabase('clear-orders', {});
 }
 
 export function clearAllVisitors(): void {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(VISITORS_KEY);
-    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  sessionVisitors = [];
+  window.dispatchEvent(new Event('ai_store_visitors_updated'));
 
-    syncAdminDatabase('clear-visitors', {});
-  } catch (e) {
-    console.error('Error clearing visitors:', e);
-  }
+  syncAdminDatabase('clear-visitors', {});
 }
 
 export function clearAllStoreHistory(): void {
