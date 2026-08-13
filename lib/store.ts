@@ -249,6 +249,17 @@ export function saveStoredOrders(orders: OrderPayload[]): void {
   }
 }
 
+function backfillOrdersToSupabase(orders: OrderPayload[]): void {
+  if (typeof window === 'undefined') return;
+  orders.forEach(order => {
+    void fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    }).catch(() => {});
+  });
+}
+
 export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredOrders();
   try {
@@ -257,12 +268,13 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       return getStoredOrders();
     }
     const { data } = await response.json();
+    const localOrders = getStoredOrders();
 
     if (!data || data.length === 0) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(ORDERS_KEY, JSON.stringify([]));
+      if (localOrders.length > 0) {
+        backfillOrdersToSupabase(localOrders);
       }
-      return [];
+      return localOrders;
     }
 
     const mapped: OrderPayload[] = data.map((o: any) => {
@@ -296,8 +308,16 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       };
     });
 
-    saveStoredOrders(mapped);
-    return mapped;
+    const remoteIds = new Set(mapped.map(o => o.orderId));
+    const localOnly = localOrders.filter(o => !remoteIds.has(o.orderId));
+    const merged = [...mapped, ...localOnly];
+
+    if (localOnly.length > 0) {
+      backfillOrdersToSupabase(localOnly);
+    }
+
+    saveStoredOrders(merged);
+    return merged;
   } catch (err) {
     console.error('Error fetching orders from Supabase:', err);
     return getStoredOrders();
