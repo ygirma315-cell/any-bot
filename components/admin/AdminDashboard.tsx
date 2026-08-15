@@ -15,11 +15,12 @@ import { AdminCategoriesView } from './AdminCategoriesView';
 import { AdminUsersView } from './AdminUsersView';
 import { AdminSettingsView } from './AdminSettingsView';
 import { AdminStorageView } from './AdminStorageView';
+import { AdminVersionModal } from './AdminVersionModal';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, 
   Tag, ExternalLink, Sparkles, FolderPlus, Layers, Bell, UserCheck, 
   ArrowUpRight, Edit2, X, Users, Settings, Grid, Home, Store, Activity, Menu,
-  RefreshCw, Check, ArrowUp, ArrowDown, Database
+  RefreshCw, Check, ArrowUp, ArrowDown, Database, Info
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -31,6 +32,7 @@ type TabType = 'dashboard' | 'orders' | 'products' | 'storage' | 'categories' | 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState<boolean>(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -423,8 +425,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </nav>
         </div>
 
-        {/* Sidebar Footer User Info & Logout */}
+        {/* Sidebar Footer User Info, Version Button & Logout */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/60 space-y-3">
+          {/* App Version Navigation Button */}
+          <button
+            type="button"
+            onClick={() => setIsVersionModalOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-bold transition-all group shadow-xs"
+            title="Click to view App Version & Update Changelog"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400 group-hover:rotate-12 transition-transform shrink-0" />
+              <span>App Updates</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black tracking-wide">
+              v2.4.0
+            </span>
+          </button>
+
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-[#FF6B00] text-white font-black text-xs flex items-center justify-center shadow-xs">
               A
@@ -465,6 +483,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Version & Updates Badge Button */}
+            <button
+              type="button"
+              onClick={() => setIsVersionModalOpen(true)}
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200/80 text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs shrink-0"
+              title="App Version & Recent System Updates"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <span className="hidden sm:inline">Version v2.4.0</span>
+              <span className="sm:hidden font-mono text-[11px]">v2.4.0</span>
+            </button>
+
             {/* Top Refresh Button */}
             <button
               type="button"
@@ -842,7 +872,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         </main>
       </div>
 
-      {/* Editor Modal */}
+      {/* Product Editor Modal */}
       {isEditorOpen && (
         <ProductEditorModal
           product={editingProduct}
@@ -855,6 +885,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           }}
         />
       )}
+
+      {/* App Version & Updates Modal */}
+      <AdminVersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+      />
     </div>
   );
 };

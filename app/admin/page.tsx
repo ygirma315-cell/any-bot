@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLogin } from '@/components/admin/AdminLogin';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { getAdminAuthHeaders } from '@/lib/store';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -14,11 +15,12 @@ export default function AdminPage() {
       setIsLoading(false);
       return;
     }
-    // Verify the server-side session cookie is still valid by hitting a
-    // lightweight authenticated endpoint. If the cookie expired or was
+    // Verify the server-side session cookie or bearer token is still valid by hitting a
+    // lightweight authenticated endpoint. If the session expired or was
     // cleared, force the user back to login instead of showing a broken
     // dashboard where every API call fails with 401.
-    fetch('/api/admin/database?resource=orders', { credentials: 'include' })
+    const headers = getAdminAuthHeaders();
+    fetch('/api/admin/database?resource=orders', { headers, credentials: 'include' })
       .then(res => {
         if (res.ok) {
           setIsAuthenticated(true);

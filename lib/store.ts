@@ -86,9 +86,9 @@ export function getStoredProducts(): Product[] {
   return synced.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
-export function saveStoredProducts(products: Product[], syncRemote = true): void {
+export function saveStoredProducts(products: Product[], syncRemote = true, notify = true): void {
   cachedProducts = [...products].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-  if (typeof window !== 'undefined') {
+  if (notify && typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_products_updated'));
   }
 
@@ -139,7 +139,7 @@ export async function fetchProductsFromSupabase(): Promise<Product[]> {
     }));
 
     mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-    saveStoredProducts(mapped, false);
+    saveStoredProducts(mapped, false, false);
     return mapped;
   } catch (err) {
     console.error('Error fetching products from Supabase:', err);
@@ -153,9 +153,9 @@ export function getStoredCategories(): string[] {
   return DEFAULT_CATEGORIES;
 }
 
-export function saveStoredCategories(categories: string[], syncRemote = true): void {
+export function saveStoredCategories(categories: string[], syncRemote = true, notify = true): void {
   cachedCategories = categories;
-  if (typeof window !== 'undefined') {
+  if (notify && typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_categories_updated'));
   }
 
@@ -171,7 +171,7 @@ export async function fetchCategoriesFromSupabase(): Promise<string[]> {
 
     const categoryNames = ['All', ...data.map((c: any) => c.name)];
     const uniqueNames = Array.from(new Set(categoryNames));
-    saveStoredCategories(uniqueNames, false);
+    saveStoredCategories(uniqueNames, false, false);
     return uniqueNames;
   } catch (err) {
     console.error('Error fetching categories from Supabase:', err);
@@ -185,9 +185,9 @@ export function getStoredPaymentMethods(): PaymentMethod[] {
   return PAYMENT_METHODS.filter(m => m.id !== 'cbe' && m.id !== 'bank-transfer');
 }
 
-export function saveStoredPaymentMethods(methods: PaymentMethod[], syncRemote = true): void {
+export function saveStoredPaymentMethods(methods: PaymentMethod[], syncRemote = true, notify = true): void {
   cachedPaymentMethods = methods;
-  if (typeof window !== 'undefined') {
+  if (notify && typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_payments_updated'));
   }
 
@@ -219,7 +219,7 @@ export async function fetchPaymentMethodsFromSupabase(): Promise<PaymentMethod[]
       instructions: Array.isArray(m.instructions) ? m.instructions : []
     }));
 
-    saveStoredPaymentMethods(mapped, false);
+    saveStoredPaymentMethods(mapped, false, false);
     return mapped;
   } catch (err) {
     console.error('Error fetching payment methods from Supabase:', err);
@@ -235,9 +235,9 @@ export function getStoredOrders(): OrderPayload[] {
   return sessionOrders;
 }
 
-export function saveStoredOrders(orders: OrderPayload[]): void {
+export function saveStoredOrders(orders: OrderPayload[], notify = true): void {
   sessionOrders = orders;
-  if (typeof window !== 'undefined') {
+  if (notify && typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_orders_updated'));
   }
 }
@@ -298,7 +298,7 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
 
     const mapped = mapOrdersFromDb(data);
 
-    saveStoredOrders(mapped);
+    saveStoredOrders(mapped, false);
     return mapped;
   } catch (err) {
     console.error('Error fetching orders from Supabase:', err);
@@ -355,9 +355,9 @@ export function getStoredStorage(): ProductStorageItem[] {
   return sessionStorageItems.length > 0 ? sessionStorageItems : DEFAULT_STORAGE_ITEMS;
 }
 
-export function saveStoredStorage(items: ProductStorageItem[], syncRemote = true): void {
+export function saveStoredStorage(items: ProductStorageItem[], syncRemote = true, notify = true): void {
   sessionStorageItems = [...items];
-  if (typeof window !== 'undefined') {
+  if (notify && typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_storage_updated'));
   }
   if (syncRemote) {
@@ -402,9 +402,6 @@ export async function fetchStorageFromSupabase(): Promise<ProductStorageItem[]> 
       created_at: item.created_at || undefined
     }));
     sessionStorageItems = mapped;
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('ai_store_storage_updated'));
-    }
     return mapped;
   } catch (err) {
     console.error('Error fetching storage from Supabase:', err);
@@ -450,52 +447,49 @@ export interface VisitorRecord {
   lastActive: string;
   hasOrdered: boolean;
   email?: string;
-  isWebVisitor?: boolean;
+  isWebVisitor: boolean;
 }
 
 export function getStoredVisitors(): VisitorRecord[] {
   return sessionVisitors;
 }
 
-export function recordVisitor(
-  user: { id: number; username?: string; first_name: string; last_name?: string; isWebVisitor?: boolean; email?: string }, 
-  hasOrdered = false
-): void {
-  if (typeof window === 'undefined') return;
-  const visitors = getStoredVisitors();
-  const existingIndex = visitors.findIndex(v => v.telegramId === user.id);
-  const now = new Date().toISOString();
+export function saveStoredVisitors(visitors: VisitorRecord[]): void {
+  sessionVisitors = visitors;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  }
+}
 
-  let updated: VisitorRecord[];
+export function addVisitor(user: { id: number; username?: string; first_name: string; last_name?: string; isWebVisitor?: boolean; email?: string }, hasOrdered: boolean = false): void {
+  const existingIndex = sessionVisitors.findIndex(v => v.telegramId === user.id);
+  const now = new Date().toISOString();
   if (existingIndex >= 0) {
-    updated = [...visitors];
-    updated[existingIndex] = {
-      ...updated[existingIndex],
-      username: user.username || updated[existingIndex].username,
-      first_name: user.first_name || updated[existingIndex].first_name,
-      last_name: user.last_name || updated[existingIndex].last_name,
+    sessionVisitors[existingIndex] = {
+      ...sessionVisitors[existingIndex],
+      username: user.username || sessionVisitors[existingIndex].username,
+      first_name: user.first_name || sessionVisitors[existingIndex].first_name,
+      last_name: user.last_name || sessionVisitors[existingIndex].last_name,
       lastActive: now,
-      hasOrdered: hasOrdered || updated[existingIndex].hasOrdered,
-      email: user.email || updated[existingIndex].email,
-      isWebVisitor: user.isWebVisitor ?? updated[existingIndex].isWebVisitor
+      hasOrdered: hasOrdered || sessionVisitors[existingIndex].hasOrdered,
+      email: user.email || sessionVisitors[existingIndex].email,
+      isWebVisitor: user.isWebVisitor ?? sessionVisitors[existingIndex].isWebVisitor
     };
   } else {
-    updated = [
-      {
-        telegramId: user.id,
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        lastActive: now,
-        hasOrdered,
-        email: user.email,
-        isWebVisitor: user.isWebVisitor
-      },
-      ...visitors
-    ];
+    sessionVisitors = [{
+      telegramId: user.id,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      lastActive: now,
+      hasOrdered,
+      email: user.email,
+      isWebVisitor: Boolean(user.isWebVisitor)
+    }, ...sessionVisitors];
   }
-  sessionVisitors = updated;
-  window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_visitors_updated'));
+  }
 
   void fetch('/api/visitors', {
     method: 'POST',
@@ -503,6 +497,8 @@ export function recordVisitor(
     body: JSON.stringify({ user, hasOrdered, isWebVisitor: user.isWebVisitor, email: user.email })
   }).catch(err => console.error('Visitor sync error:', err));
 }
+
+export const recordVisitor = addVisitor;
 
 export async function fetchVisitorsFromSupabase(): Promise<VisitorRecord[]> {
   if (!isSupabaseConfigured || !supabase) return getStoredVisitors();
@@ -533,7 +529,6 @@ export async function fetchVisitorsFromSupabase(): Promise<VisitorRecord[]> {
       };
     });
     sessionVisitors = mapped;
-    window.dispatchEvent(new Event('ai_store_visitors_updated'));
     return mapped;
   } catch (err) {
     console.error('Error fetching visitors from Supabase:', err);
@@ -627,7 +622,8 @@ export async function updateOrderStatus(
     status,
     telegramUser: existingOrder?.telegramUser,
     deliveryEmail: existingOrder?.deliveryEmail,
-    total: existingOrder?.total
+    total: existingOrder?.total,
+    items: existingOrder?.items
   });
 
   if (!dbResult.success) {

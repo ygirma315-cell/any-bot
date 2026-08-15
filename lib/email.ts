@@ -28,11 +28,13 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
   }
 
   // SMTP Settings from process.env
-  const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_SERVER_HOST;
+  const smtpHost = (process.env.SMTP_HOST || process.env.EMAIL_SERVER_HOST || '').trim();
   const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_SERVER_PORT || 587);
-  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_SERVER_USER;
-  const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_SERVER_PASSWORD;
-  const fromEmail = process.env.SMTP_FROM || process.env.EMAIL_FROM || 'AnyAi Store <delivery@aiunlimited.shop>';
+  const smtpUser = (process.env.SMTP_USER || process.env.EMAIL_SERVER_USER || '').trim();
+  const smtpPass = (process.env.SMTP_PASS || process.env.EMAIL_SERVER_PASSWORD || '').trim();
+  const isSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465;
+  const defaultFrom = smtpUser ? `AnyAi STORE <${smtpUser}>` : 'AnyAi STORE <delivery@aiunlimited.shop>';
+  const fromEmail = (process.env.SMTP_FROM || process.env.EMAIL_FROM || defaultFrom).trim();
 
   const itemsHtml = items.map((item, idx) => {
     let credsBlock = '';
@@ -144,19 +146,22 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
   `;
 
   if (smtpHost && smtpUser && smtpPass) {
-    console.log(`[Email Delivery] SMTP configured: host=${smtpHost} port=${smtpPort} user=${smtpUser} from=${fromEmail}`);
+    console.log(`[Email Delivery] SMTP configured: host=${smtpHost} port=${smtpPort} secure=${isSecure} user=${smtpUser} from=${fromEmail}`);
     try {
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
-        secure: smtpPort === 465,
-        connectionTimeout: 5000,
-        greetingTimeout: 5000,
-        socketTimeout: 5000,
+        secure: isSecure,
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 8000,
         auth: {
           user: smtpUser,
           pass: smtpPass
+        },
+        tls: {
+          rejectUnauthorized: false
         }
       });
 
@@ -167,14 +172,14 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
           subject: `✅ From AnyAi STORE: Your Subscription Details for Order ${orderId}`,
           html: htmlContent
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP connection timeout after 6 seconds')), 6000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP connection timeout after 8 seconds')), 8000))
       ]);
 
       console.log(`[Email Delivery] Successfully sent credentials email to ${toEmail} for order ${orderId}`);
       return { success: true };
     } catch (err: any) {
       console.error('[Email Delivery Error]', err);
-      return { success: false, error: err.message };
+      return { success: false, error: err.message || 'SMTP delivery failed' };
     }
   } else {
     console.warn(`[Email Delivery] SKIPPED — SMTP NOT CONFIGURED. Missing env vars. SMTP_HOST=${smtpHost || 'MISSING'} SMTP_USER=${smtpUser || 'MISSING'} SMTP_PASS=${smtpPass ? 'SET' : 'MISSING'}. Email prepared for ${toEmail} with ${items.length} credential items but NOT sent.`);

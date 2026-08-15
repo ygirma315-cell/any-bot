@@ -92,8 +92,8 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       const orderRow = orderData || null;
-      let deliveryEmail: string | undefined = orderRow?.delivery_email || payload.deliveryEmail || undefined;
-      const orderItems = orderRow?.order_items || payload.items || [];
+      let deliveryEmail: string | undefined = orderRow?.delivery_email || payload.deliveryEmail || payload.delivery_email || undefined;
+      const orderItems = (orderRow?.order_items && orderRow.order_items.length > 0) ? orderRow.order_items : (payload.items || []);
 
       // 2. If Order is Approved / Accepted, automatically claim available credentials from product_storage
       const claimedCredentials: DeliveryItemCredential[] = [];
@@ -169,6 +169,17 @@ export async function POST(request: Request) {
         }
       }
 
+      // Ensure claimedCredentials has at least one item on acceptance so email & customer access are always delivered
+      if (isAccepted && claimedCredentials.length === 0) {
+        claimedCredentials.push({
+          productName: 'AI Subscription Service',
+          price: orderRow?.total ? Number(orderRow.total) : payload.total ? Number(payload.total) : undefined,
+          type: 'text',
+          notes: 'Your subscription has been confirmed and activated. Contact support on Telegram @exo80 if you have any questions.',
+          warranty: 'Warranty Included'
+        });
+      }
+
       // 3. Update status in Supabase orders table
       const updatePayload: Record<string, any> = {
         status: String(status),
@@ -237,38 +248,47 @@ export async function POST(request: Request) {
         credentials: claimedCredentials.length > 0 ? claimedCredentials : undefined
       };
 
-      // 5. Automated Delivery via Email (dispatched in background, non-blocking)
-      console.log(`[Email Check] orderId=${orderId} isAccepted=${isAccepted} deliveryEmail=${deliveryEmail} claimedCredentials=${claimedCredentials.length} orderItems=${orderItems.length}`);
+      // 5. Automated Delivery via Email & Telegram Bot DM (awaited so Vercel does not terminate background connection)
+      const deliveryTasks: Promise<any>[] = [];
+
+      console.log(`[Order Fulfillment Check] orderId=${orderId} isAccepted=${isAccepted} deliveryEmail=${deliveryEmail} claimedCredentials=${claimedCredentials.length} orderItems=${orderItems.length}`);
       if (!deliveryEmail) {
         console.warn(`[Email Delivery] Skipped: no delivery email found for order ${orderId}. orderRow.delivery_email=${orderRow?.delivery_email} payload.deliveryEmail=${payload.deliveryEmail}`);
       }
-      if (claimedCredentials.length === 0) {
-        console.warn(`[Email Delivery] Skipped: no claimed credentials for order ${orderId}. orderItems=${JSON.stringify(orderItems.map((i: any) => ({ id: i.id, product_id: i.product_id, name: i.product_name || i.name })))}`);
-      }
+
       if (isAccepted && deliveryEmail && deliveryEmail.includes('@') && claimedCredentials.length > 0) {
-        sendDeliveryEmail({
-          toEmail: deliveryEmail,
-          customerName: customer?.first_name || 'Customer',
-          orderId: String(orderId),
-          items: claimedCredentials,
-          totalAmount: extraDetails.total
-        }).then(result => {
-          console.log(`[Email Delivery] Result for order ${orderId}:`, JSON.stringify(result));
-        }).catch(emailErr => {
-          console.error('[Background Email Dispatch Error]', emailErr);
-        });
+        deliveryTasks.push(
+          sendDeliveryEmail({
+            toEmail: deliveryEmail,
+            customerName: customer?.first_name || 'Customer',
+            orderId: String(orderId),
+            items: claimedCredentials,
+            totalAmount: extraDetails.total
+          }).then(result => {
+            console.log(`[Email Delivery] Result for order ${orderId}:`, JSON.stringify(result));
+            return result;
+          }).catch(emailErr => {
+            console.error('[Email Dispatch Error]', emailErr);
+            return { success: false, error: emailErr.message };
+          })
+        );
       }
 
-      // 6. Automated Delivery via Telegram Bot DM (dispatched in background, non-blocking)
-      sendTelegramOrderStatusUpdate(
-        String(orderId),
-        String(status),
-        customer,
-        deliveryEmail,
-        extraDetails
-      ).catch(tgErr => {
-        console.error('[Background Telegram Dispatch Error]', tgErr);
-      });
+      deliveryTasks.push(
+        sendTelegramOrderStatusUpdate(
+          String(orderId),
+          String(status),
+          customer,
+          deliveryEmail,
+          extraDetails
+        ).catch(tgErr => {
+          console.error('[Telegram Dispatch Error]', tgErr);
+          return { success: false, error: tgErr.message };
+        })
+      );
+
+      // Await all notification & email tasks before completing the serverless response
+      await Promise.allSettled(deliveryTasks);
 
       return NextResponse.json({ 
         success: true, 

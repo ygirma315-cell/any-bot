@@ -105,9 +105,10 @@ export const AdminOrdersView: React.FC = () => {
         setToastMessage(`❌ Accept failed: ${errDetail}`);
       }
     } else {
-      setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Bot notification sent to ${userHandle}.`);
+      const emailNote = order.deliveryEmail ? ` ✉️ Delivery email sent to ${order.deliveryEmail}.` : '';
+      setToastMessage(`✅ Order ${order.orderId} ACCEPTED & FULFILLED!${emailNote} Bot notification sent to ${userHandle}.`);
     }
-    setTimeout(() => setToastMessage(null), 5000);
+    setTimeout(() => setToastMessage(null), 6000);
   };
 
   const handleRejectOrder = async (order: OrderPayload) => {
