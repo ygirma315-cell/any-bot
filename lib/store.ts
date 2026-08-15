@@ -42,7 +42,7 @@ export function getAdminAuthHeaders(): Record<string, string> {
   return headers;
 }
 
-export async function syncAdminDatabase(action: string, payload: unknown): Promise<{ success: boolean; error?: string }> {
+export async function syncAdminDatabase(action: string, payload: unknown): Promise<{ success: boolean; error?: string; [key: string]: any }> {
   if (typeof window === 'undefined') return { success: false, error: 'Window undefined' };
   try {
     const headers = getAdminAuthHeaders();
@@ -52,11 +52,15 @@ export async function syncAdminDatabase(action: string, payload: unknown): Promi
       credentials: 'include',
       body: JSON.stringify({ action, payload })
     });
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new Error(body.error || `Admin database update failed with status ${response.status}`);
+      return { 
+        success: false, 
+        error: data.error || `Admin database update failed with status ${response.status}`,
+        ...data 
+      };
     }
-    return { success: true };
+    return { success: data.success !== false, ...data };
   } catch (error: any) {
     console.error('Admin database sync error:', error);
     return { success: false, error: error.message || 'Database update failed' };

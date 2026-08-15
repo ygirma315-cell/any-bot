@@ -85,7 +85,7 @@ export const AdminSettingsView: React.FC = () => {
 
     try {
       const res = await sendTestEmail(testEmailInput.trim());
-      if (res.success && res.emailSent) {
+      if (res && res.success) {
         setTestResult({
           success: true,
           message: `✅ LIVE TEST EMAIL SENT SUCCESSFULLY! Delivered via ${res.provider || 'SMTP'} to ${testEmailInput}. Check your inbox & spam folder.`
@@ -93,7 +93,7 @@ export const AdminSettingsView: React.FC = () => {
       } else {
         setTestResult({
           success: false,
-          message: `❌ Test delivery failed: ${res.error || 'SMTP service unconfigured or connection rejected'}.`
+          message: `❌ Test delivery failed: ${res?.error || 'SMTP service unconfigured or connection rejected'}.`
         });
       }
     } catch (err: any) {

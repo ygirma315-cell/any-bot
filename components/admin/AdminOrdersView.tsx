@@ -107,8 +107,8 @@ export const AdminOrdersView: React.FC = () => {
       }
     } else {
       const emailDelivery = result?.emailDelivery;
-      if (emailDelivery?.attempted && !emailDelivery.sent) {
-        setToastMessage(`⚠️ Order ${order.orderId} ACCEPTED! But email could not be sent: ${emailDelivery.error || 'SMTP not configured'}. Configure SMTP in Settings and click 'Resend Email'.`);
+      if (emailDelivery?.attempted && !emailDelivery.sent && emailDelivery.error) {
+        setToastMessage(`⚠️ Order ${order.orderId} ACCEPTED! But email could not be sent: ${emailDelivery.error}. Configure SMTP in Settings and click 'Resend Email'.`);
       } else if (order.deliveryEmail) {
         setToastMessage(`✅ Order ${order.orderId} ACCEPTED & FULFILLED! ✉️ Delivery email sent to ${order.deliveryEmail}. Bot notification sent to ${userHandle}.`);
       } else {
@@ -128,10 +128,10 @@ export const AdminOrdersView: React.FC = () => {
     setResendingOrderId(order.orderId);
     try {
       const res = await resendDeliveryEmail(order.orderId, order.deliveryEmail);
-      if (res.success && res.emailSent) {
+      if (res && res.success) {
         setToastMessage(`✉️ Delivery email successfully sent to ${order.deliveryEmail} for order ${order.orderId}!`);
       } else {
-        setToastMessage(`❌ Email sending failed: ${res.error || 'SMTP not configured'}. Check SMTP settings in Admin Settings tab.`);
+        setToastMessage(`❌ Email sending failed: ${res?.error || 'Could not dispatch email. Check SMTP settings in Admin Settings.'}`);
       }
     } catch (err: any) {
       setToastMessage(`❌ Failed to send email: ${err.message || 'Network error'}`);
