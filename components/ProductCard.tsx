@@ -16,6 +16,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAddedAnim, setIsAddedAnim] = useState(false);
 
+  const isOutOfStock = product.stock !== undefined ? product.stock <= 0 : false;
+  const isAvailable = product.available !== false && !isOutOfStock;
   const isWarrantyActive = product.isWarranty !== false;
 
   const handleFlip = (e: React.MouseEvent) => {
@@ -26,6 +28,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isAvailable) {
+      triggerHaptic('heavy');
+      return;
+    }
     triggerHaptic('medium');
     onAddToCart(product);
     setIsAddedAnim(true);
@@ -86,7 +92,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
               </div>
             )}
 
-            {/* Price (Green) & Stock Tag (Red) */}
+            {/* Price (Green) & Stock Tag */}
             <div className="flex items-center justify-between mb-3">
               {/* Green Price Tag */}
               <div className="flex items-baseline gap-0.5">
@@ -94,14 +100,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
                 <span className="text-lg font-extrabold text-emerald-600">{product.price}</span>
               </div>
 
-              {/* Red Stock Tag */}
-              <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50/90 px-2 py-0.5 rounded-full border border-rose-200/70 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span>{product.stock ?? 10} Stock</span>
-              </span>
+              {/* Stock Tag (Shows Out of Stock / No Stock when 0) */}
+              {isOutOfStock ? (
+                <span className="text-[10px] font-black text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-full border border-rose-300 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                  <span>0 Stock (Sold Out)</span>
+                </span>
+              ) : (
+                <span className="text-[10px] font-extrabold text-rose-700 bg-rose-50/90 px-2 py-0.5 rounded-full border border-rose-200/70 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  <span>{product.stock} Stock</span>
+                </span>
+              )}
             </div>
 
-            {/* Action Buttons with Rotating RGB Borders */}
+            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
@@ -114,12 +127,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, 
 
               <button
                 type="button"
+                disabled={!isAvailable}
                 onClick={handleAdd}
                 className={`btn-rgb-border text-[11px] py-1.5 px-2 font-extrabold transition-all ${
-                  isAddedAnim ? 'scale-95 bg-emerald-600 text-white' : ''
+                  !isAvailable 
+                    ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200 shadow-none' 
+                    : isAddedAnim 
+                    ? 'scale-95 bg-emerald-600 text-white' 
+                    : ''
                 }`}
               >
-                {isAddedAnim ? (
+                {!isAvailable ? (
+                  <span>No Stock</span>
+                ) : isAddedAnim ? (
                   <>
                     <Check className="w-3 h-3 text-emerald-600" />
                     <span>Added</span>

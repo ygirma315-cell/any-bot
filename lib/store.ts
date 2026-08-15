@@ -324,10 +324,23 @@ export interface ProductStorageItem {
   created_at?: string;
 }
 
-let sessionStorageItems: ProductStorageItem[] = [];
+const DEFAULT_STORAGE_ITEMS: ProductStorageItem[] = [
+  { id: 'demo-chatgpt', product_id: 'chatgpt-plus', type: 'account', link: 'https://chatgpt.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Log in at chatgpt.com with provided email and password. Do not modify account settings.', is_used: false },
+  { id: 'demo-gemini', product_id: 'gemini-pro', type: 'account', link: 'https://gemini.google.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Access Google Gemini Advanced with full 1M context. Enjoy your AI tools!', is_used: false },
+  { id: 'demo-claude', product_id: 'claude-pro', type: 'account', link: 'https://claude.ai', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Log in at claude.ai with provided credentials to access Claude 3.5 Sonnet & Artifacts.', is_used: false },
+  { id: 'demo-perplexity', product_id: 'perplexity-pro', type: 'account', link: 'https://perplexity.ai', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Full Perplexity Pro AI Search with unlimited queries and model selection.', is_used: false },
+  { id: 'demo-canva', product_id: 'canva-pro', type: 'account', link: 'https://canva.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Log in at canva.com to access full Magic Studio and Pro asset library.', is_used: false },
+  { id: 'demo-capcut', product_id: 'capcut-pro', type: 'account', link: 'https://capcut.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Log in on CapCut PC or Mobile to unlock 4K export and Pro transitions.', is_used: false },
+  { id: 'demo-copilot', product_id: 'copilot-pro', type: 'account', link: 'https://copilot.microsoft.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Microsoft Copilot Pro subscription active for Office & GPT-4 Turbo reasoning.', is_used: false },
+  { id: 'demo-youtube', product_id: 'youtube-premium', type: 'account', link: 'https://youtube.com/premium', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Ad-free streaming, YouTube Music, and background playback active.', is_used: false },
+  { id: 'demo-midjourney', product_id: 'midjourney-v6', type: 'account', link: 'https://midjourney.com', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Log in via Midjourney/Discord to generate photorealistic v6 art.', is_used: false },
+  { id: 'demo-notion', product_id: 'notion-ai', type: 'account', link: 'https://notion.so', username: 'demo.anyai@store.com', password: 'AnyAiPass2025!', notes: 'Notion AI Workspace active. Enjoy automated AI document summarization.', is_used: false },
+];
+
+let sessionStorageItems: ProductStorageItem[] = [...DEFAULT_STORAGE_ITEMS];
 
 export function getStoredStorage(): ProductStorageItem[] {
-  return sessionStorageItems;
+  return sessionStorageItems.length > 0 ? sessionStorageItems : DEFAULT_STORAGE_ITEMS;
 }
 
 export function saveStoredStorage(items: ProductStorageItem[], syncRemote = true): void {

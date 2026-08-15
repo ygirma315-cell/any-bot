@@ -189,3 +189,17 @@ INSERT INTO public.products (id, name, short_description, full_description, pric
 ('midjourney-v6', 'Midjourney v6', 'v6 Photorealistic AI Art & Fast Hours', 'Midjourney Standard/Pro tier access for ultra-high quality AI artwork generation via Discord/Web with commercial usage rights.', 6.00, '$', '15 Days Warranty', 15, true, true, 6, 'AI Design & Video', '/assets/products/midjourney.svg', 'rgba(168, 85, 247, 0.4)', '["15-day guarantee period", "v6 & Niji model generation access", "Fast GPU generation hours", "Full commercial license"]'::jsonb),
 ('notion-ai', 'Notion AI', 'Q&A, Writing Assistant & Unlimited AI', 'Notion AI add-on subscription for unlimited writing assistance, document summarization, database automation, and AI Q&A search.', 4.00, '$', '30 Days Warranty', 30, true, true, 16, 'AI Search & Knowledge', '/assets/products/notion.svg', 'rgba(30, 41, 59, 0.4)', '["30-day workspace warranty", "Unlimited Notion AI queries", "Auto-fill databases with AI summaries", "Instant invite upon order review"]'::jsonb)
 ON CONFLICT (id) DO NOTHING;
+
+-- 14. Seed Demo Credentials in Product Storage for All Products
+INSERT INTO public.product_storage (product_id, type, link, username, password, notes, is_used) VALUES
+('chatgpt-plus', 'account', 'https://chatgpt.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Log in at chatgpt.com with provided email and password. Do not modify account settings.', false),
+('gemini-pro', 'account', 'https://gemini.google.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Access Google Gemini Advanced with full 1M context. Enjoy your AI tools!', false),
+('claude-pro', 'account', 'https://claude.ai', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Log in at claude.ai with provided credentials to access Claude 3.5 Sonnet & Artifacts.', false),
+('perplexity-pro', 'account', 'https://perplexity.ai', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Full Perplexity Pro AI Search with unlimited queries and model selection.', false),
+('canva-pro', 'account', 'https://canva.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Log in at canva.com to access full Magic Studio and Pro asset library.', false),
+('capcut-pro', 'account', 'https://capcut.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Log in on CapCut PC or Mobile to unlock 4K export and Pro transitions.', false),
+('copilot-pro', 'account', 'https://copilot.microsoft.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Microsoft Copilot Pro subscription active for Office & GPT-4 Turbo reasoning.', false),
+('youtube-premium', 'account', 'https://youtube.com/premium', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Ad-free streaming, YouTube Music, and background playback active.', false),
+('midjourney-v6', 'account', 'https://midjourney.com', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Log in via Midjourney/Discord to generate photorealistic v6 art.', false),
+('notion-ai', 'account', 'https://notion.so', 'demo.anyai@store.com', 'AnyAiPass2025!', 'Notion AI Workspace active. Enjoy automated AI document summarization.', false);
+

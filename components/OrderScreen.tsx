@@ -36,6 +36,13 @@ export const OrderScreen: React.FC<OrderScreenProps> = ({
   const total = subtotal;
 
   const handleContinue = () => {
+    const outOfStockItems = cart.filter(item => item.product.stock !== undefined && item.product.stock <= 0);
+    if (outOfStockItems.length > 0) {
+      setEmailError(`⚠️ ${outOfStockItems.map(i => i.product.name).join(', ')} is currently out of stock. Please remove it from your cart to proceed.`);
+      triggerHaptic('heavy');
+      return;
+    }
+
     if (!userEmail.trim()) {
       setEmailError('Please enter your email address to receive the product.');
       return;
