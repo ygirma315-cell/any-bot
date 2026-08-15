@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendDeliveryEmail, getSmtpConfigStatus } from '@/lib/email';
+import { isValidAdminSession } from '@/lib/admin-session';
 
 export const dynamic = 'force-dynamic';
 
+function requireAdmin(req: NextRequest): boolean {
+  const cookie = req.headers.get('cookie');
+  const auth = req.headers.get('authorization');
+  return isValidAdminSession(cookie, auth);
+}
+
 export async function GET(req: NextRequest) {
+  if (!requireAdmin(req)) {
+    return NextResponse.json({ success: false, error: 'Admin authentication required.' }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const targetEmail = url.searchParams.get('to') || url.searchParams.get('email') || url.searchParams.get('testEmail');
 
@@ -29,7 +40,7 @@ export async function GET(req: NextRequest) {
         price: 19.99,
         type: 'account',
         username: 'test.user@aiunlimited.shop',
-        password: 'DemoPassword2026!',
+        password: 'TestPass-DEMO',
         notes: 'This is a verified live test delivery email from your AnyAi Store configuration.',
         warranty: '30-Day Active Warranty'
       }
@@ -47,6 +58,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!requireAdmin(req)) {
+    return NextResponse.json({ success: false, error: 'Admin authentication required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const targetEmail = body.to || body.email || body.testEmail;
@@ -69,7 +84,7 @@ export async function POST(req: NextRequest) {
           price: 19.99,
           type: 'account',
           username: 'test.user@aiunlimited.shop',
-          password: 'DemoPassword2026!',
+          password: 'TestPass-DEMO',
           notes: 'This is a verified live test delivery email from your AnyAi Store configuration.',
           warranty: '30-Day Active Warranty'
         }

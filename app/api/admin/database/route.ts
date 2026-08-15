@@ -392,7 +392,7 @@ export async function POST(request: Request) {
             price: 19.99,
             type: 'account',
             username: 'test.user@aiunlimited.shop',
-            password: 'DemoPassword2026!',
+            password: 'TestPass-DEMO',
             notes: 'This is a verified live test delivery email from your AnyAi Store configuration.',
             warranty: '30-Day Active Warranty'
           }
