@@ -63,8 +63,19 @@ export async function POST(request: Request) {
       ({ error } = await db.from('admin_settings').upsert(payload));
     } else if (action === 'save-storage-items') {
       ({ error } = await db.from('product_storage').upsert(payload));
+      // Auto-sync stock in products table from count of unused storage items
+      const productIds = Array.from(new Set((Array.isArray(payload) ? payload : [payload]).map(p => p.product_id).filter(Boolean)));
+      for (const pId of productIds) {
+        const { count } = await db.from('product_storage').select('id', { count: 'exact', head: true }).eq('product_id', pId).eq('is_used', false);
+        await db.from('products').update({ stock: count || 0, available: (count || 0) > 0 }).eq('id', pId);
+      }
     } else if (action === 'delete-storage-item') {
+      const { data: itemData } = await db.from('product_storage').select('product_id').eq('id', payload.id).maybeSingle();
       ({ error } = await db.from('product_storage').delete().eq('id', payload.id));
+      if (itemData?.product_id) {
+        const { count } = await db.from('product_storage').select('id', { count: 'exact', head: true }).eq('product_id', itemData.product_id).eq('is_used', false);
+        await db.from('products').update({ stock: count || 0, available: (count || 0) > 0 }).eq('id', itemData.product_id);
+      }
     } else if (action === 'update-order-status') {
       const { orderId, status } = payload || {};
       if (!orderId || !status) {
@@ -137,6 +148,21 @@ export async function POST(request: Request) {
                 warranty
               });
             }
+
+            // Immediately decrement / update product stock in 'products' table
+            const { count: remainingCount } = await db
+              .from('product_storage')
+              .select('id', { count: 'exact', head: true })
+              .eq('product_id', prodId)
+              .eq('is_used', false);
+            
+            await db
+              .from('products')
+              .update({
+                stock: remainingCount || 0,
+                available: (remainingCount || 0) > 0
+              })
+              .eq('id', prodId);
           }
         } catch (credErr) {
           console.error('Error claiming product credentials from storage:', credErr);

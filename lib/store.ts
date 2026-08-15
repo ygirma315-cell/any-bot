@@ -73,8 +73,17 @@ export const DEFAULT_CATEGORIES = [
 
 // --- PRODUCTS ---
 export function getStoredProducts(): Product[] {
-  if (cachedProducts) return cachedProducts;
-  return [...PRODUCTS].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  const base = cachedProducts || [...PRODUCTS];
+  const storage = getStoredStorage();
+  const synced = base.map(p => {
+    const hasStorage = storage.some(s => s.product_id === p.id);
+    if (hasStorage) {
+      const unusedCount = storage.filter(s => s.product_id === p.id && !s.is_used).length;
+      return { ...p, stock: unusedCount, available: unusedCount > 0 };
+    }
+    return p;
+  });
+  return synced.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
 export function saveStoredProducts(products: Product[], syncRemote = true): void {
@@ -629,6 +638,49 @@ export async function updateOrderStatus(
       deliveryEmail: existingOrder.deliveryEmail
     };
     sessionOrders = [updatedOrder, ...sessionOrders];
+  }
+
+  const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
+  if (isAccepted) {
+    const storage = getStoredStorage();
+    const orderItems = updatedOrder?.items || existingOrder?.items || [];
+    const claimedCreds: any[] = [];
+    let modifiedStorage = false;
+
+    for (const itm of orderItems) {
+      const prodId = itm.id;
+      const qty = itm.quantity || 1;
+      let count = 0;
+      for (const s of storage) {
+        if (s.product_id === prodId && !s.is_used && count < qty) {
+          s.is_used = true;
+          s.order_id = orderId;
+          s.used_at = new Date().toISOString();
+          claimedCreds.push({
+            productName: itm.name,
+            price: itm.price,
+            type: s.type,
+            link: s.link,
+            username: s.username,
+            password: s.password,
+            notes: s.notes,
+            warranty: itm.warranty
+          });
+          count++;
+          modifiedStorage = true;
+        }
+      }
+    }
+
+    if (modifiedStorage) {
+      saveStoredStorage(storage, false);
+      if (updatedOrder) {
+        updatedOrder.deliveredCredentials = claimedCreds;
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('ai_store_products_updated'));
+      }
+    }
   }
 
   if (typeof window !== 'undefined') {
