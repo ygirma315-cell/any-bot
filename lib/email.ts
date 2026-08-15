@@ -150,18 +150,24 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
         host: smtpHost,
         port: smtpPort,
         secure: smtpPort === 465,
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 5000,
         auth: {
           user: smtpUser,
           pass: smtpPass
         }
       });
 
-      await transporter.sendMail({
-        from: fromEmail,
-        to: toEmail,
-        subject: `✅ From AnyAi STORE: Your Subscription Details for Order ${orderId}`,
-        html: htmlContent
-      });
+      await Promise.race([
+        transporter.sendMail({
+          from: fromEmail,
+          to: toEmail,
+          subject: `✅ From AnyAi STORE: Your Subscription Details for Order ${orderId}`,
+          html: htmlContent
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP connection timeout after 6 seconds')), 6000))
+      ]);
 
       console.log(`[Email Delivery] Successfully sent credentials email to ${toEmail} for order ${orderId}`);
       return { success: true };

@@ -222,6 +222,7 @@ ${customerStatusText}${credentialsFormatted}
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(5000),
         body: JSON.stringify({
           chat_id: validCustomerTgId,
           text: customerTextMessage,
@@ -264,6 +265,7 @@ ${extraDetails?.total ? `<b>Total:</b> $${extraDetails.total.toFixed(2)}\n` : ''
         const adminRes = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(5000),
           body: JSON.stringify({
             chat_id: adminChatId,
             text: adminTextMessage,

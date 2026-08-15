@@ -178,13 +178,23 @@ export async function POST(request: Request) {
         updatePayload.delivered_credentials = claimedCredentials;
       }
 
-      const { error: updateErr } = await db
+      let { error: updateErr } = await db
         .from('orders')
         .update(updatePayload)
         .eq('order_id', orderId);
 
-      if (updateErr) {
-        console.error('Error updating order in database:', updateErr);
+      if (updateErr && updatePayload.delivered_credentials) {
+        console.warn('Retrying order status update without delivered_credentials column in case schema is not yet migrated:', updateErr);
+        const { error: retryErr } = await db
+          .from('orders')
+          .update({
+            status: String(status),
+            updated_at: new Date().toISOString()
+          })
+          .eq('order_id', orderId);
+        if (retryErr) {
+          console.error('Error updating order status in Supabase:', retryErr);
+        }
       }
 
       // 4. Resolve customer contact info
@@ -227,29 +237,29 @@ export async function POST(request: Request) {
         credentials: claimedCredentials.length > 0 ? claimedCredentials : undefined
       };
 
-      // 5. Automated Delivery via Email (if email address was provided)
+      // 5. Automated Delivery via Email (dispatched in background, non-blocking)
       if (isAccepted && deliveryEmail && deliveryEmail.includes('@') && claimedCredentials.length > 0) {
-        try {
-          await sendDeliveryEmail({
-            toEmail: deliveryEmail,
-            customerName: customer?.first_name || 'Customer',
-            orderId: String(orderId),
-            items: claimedCredentials,
-            totalAmount: extraDetails.total
-          });
-        } catch (emailErr) {
-          console.error('Automated email dispatch error:', emailErr);
-        }
+        sendDeliveryEmail({
+          toEmail: deliveryEmail,
+          customerName: customer?.first_name || 'Customer',
+          orderId: String(orderId),
+          items: claimedCredentials,
+          totalAmount: extraDetails.total
+        }).catch(emailErr => {
+          console.error('[Background Email Dispatch Error]', emailErr);
+        });
       }
 
-      // 6. Automated Delivery via Telegram Bot DM (if valid Telegram user)
-      await sendTelegramOrderStatusUpdate(
+      // 6. Automated Delivery via Telegram Bot DM (dispatched in background, non-blocking)
+      sendTelegramOrderStatusUpdate(
         String(orderId),
         String(status),
         customer,
         deliveryEmail,
         extraDetails
-      );
+      ).catch(tgErr => {
+        console.error('[Background Telegram Dispatch Error]', tgErr);
+      });
 
       return NextResponse.json({ 
         success: true, 
