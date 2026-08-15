@@ -688,3 +688,41 @@ export function clearAllStoreHistory(): void {
   clearAllOrders();
   clearAllVisitors();
 }
+
+export async function resendDeliveryEmail(
+  orderId: string,
+  targetEmail?: string
+): Promise<{ success: boolean; emailSent?: boolean; error?: string; provider?: string }> {
+  return await syncAdminDatabase('resend-delivery-email', { orderId, targetEmail });
+}
+
+export async function sendTestEmail(
+  targetEmail: string,
+  smtpOverride?: any
+): Promise<{ success: boolean; emailSent?: boolean; error?: string; provider?: string }> {
+  return await syncAdminDatabase('test-email', { targetEmail, smtpOverride });
+}
+
+export async function fetchSmtpStatus(): Promise<{
+  isConfigured: boolean;
+  provider: 'SMTP' | 'Resend' | 'None';
+  host: string;
+  port: number;
+  user: string;
+  hasPass: boolean;
+  from: string;
+  hasResendKey: boolean;
+} | null> {
+  try {
+    const headers = getAdminAuthHeaders();
+    const res = await fetch('/api/admin/database?resource=smtp-status', {
+      headers,
+      credentials: 'include'
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch {
+    return null;
+  }
+}

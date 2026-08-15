@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { OrderPayload } from '@/lib/bot';
-import { getStoredOrders, updateOrderStatus, clearAllOrders, fetchOrdersFromSupabase, getStoredAdminPassword } from '@/lib/store';
-import { Clock, CheckCircle2, XCircle, User, Mail, Send, AlertTriangle, ShieldCheck, RefreshCw, Sparkles, Filter, Trash2, Lock, X } from 'lucide-react';
+import { getStoredOrders, updateOrderStatus, clearAllOrders, fetchOrdersFromSupabase, getStoredAdminPassword, resendDeliveryEmail } from '@/lib/store';
+import { Clock, CheckCircle2, XCircle, User, Mail, Send, AlertTriangle, ShieldCheck, RefreshCw, Sparkles, Filter, Trash2, Lock, X, SendHorizonal } from 'lucide-react';
 
 export const AdminOrdersView: React.FC = () => {
   const [orders, setOrders] = useState<OrderPayload[]>([]);
@@ -17,6 +17,7 @@ export const AdminOrdersView: React.FC = () => {
 
   const [isManualLoading, setIsManualLoading] = useState<boolean>(false);
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+  const [resendingOrderId, setResendingOrderId] = useState<string | null>(null);
 
   const areOrdersEqual = (a: OrderPayload[], b: OrderPayload[]) => {
     if (a.length !== b.length) return false;
@@ -93,7 +94,7 @@ export const AdminOrdersView: React.FC = () => {
 
   const handleAcceptOrder = async (order: OrderPayload) => {
     setProcessingOrderId(order.orderId);
-    const result = await updateOrderStatus(order.orderId, 'Accepted', order);
+    const result: any = await updateOrderStatus(order.orderId, 'Accepted', order);
     setProcessingOrderId(null);
     const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
     
@@ -105,10 +106,39 @@ export const AdminOrdersView: React.FC = () => {
         setToastMessage(`❌ Accept failed: ${errDetail}`);
       }
     } else {
-      const emailNote = order.deliveryEmail ? ` ✉️ Delivery email sent to ${order.deliveryEmail}.` : '';
-      setToastMessage(`✅ Order ${order.orderId} ACCEPTED & FULFILLED!${emailNote} Bot notification sent to ${userHandle}.`);
+      const emailDelivery = result?.emailDelivery;
+      if (emailDelivery?.attempted && !emailDelivery.sent) {
+        setToastMessage(`⚠️ Order ${order.orderId} ACCEPTED! But email could not be sent: ${emailDelivery.error || 'SMTP not configured'}. Configure SMTP in Settings and click 'Resend Email'.`);
+      } else if (order.deliveryEmail) {
+        setToastMessage(`✅ Order ${order.orderId} ACCEPTED & FULFILLED! ✉️ Delivery email sent to ${order.deliveryEmail}. Bot notification sent to ${userHandle}.`);
+      } else {
+        setToastMessage(`✅ Order ${order.orderId} ACCEPTED & FULFILLED! Bot notification sent to ${userHandle}.`);
+      }
     }
-    setTimeout(() => setToastMessage(null), 6000);
+    setTimeout(() => setToastMessage(null), 8000);
+  };
+
+  const handleResendEmail = async (order: OrderPayload) => {
+    if (!order.deliveryEmail) {
+      setToastMessage(`⚠️ Order ${order.orderId} does not have a delivery email address.`);
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+
+    setResendingOrderId(order.orderId);
+    try {
+      const res = await resendDeliveryEmail(order.orderId, order.deliveryEmail);
+      if (res.success && res.emailSent) {
+        setToastMessage(`✉️ Delivery email successfully sent to ${order.deliveryEmail} for order ${order.orderId}!`);
+      } else {
+        setToastMessage(`❌ Email sending failed: ${res.error || 'SMTP not configured'}. Check SMTP settings in Admin Settings tab.`);
+      }
+    } catch (err: any) {
+      setToastMessage(`❌ Failed to send email: ${err.message || 'Network error'}`);
+    } finally {
+      setResendingOrderId(null);
+      setTimeout(() => setToastMessage(null), 8000);
+    }
   };
 
   const handleRejectOrder = async (order: OrderPayload) => {
@@ -278,6 +308,18 @@ export const AdminOrdersView: React.FC = () => {
                     </div>
                   )}
 
+                  {isAccepted && order.deliveryEmail && (
+                    <button
+                      type="button"
+                      disabled={resendingOrderId === order.orderId}
+                      onClick={() => handleResendEmail(order)}
+                      className="w-full py-2 px-3 bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-orange-700 border border-orange-200 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <SendHorizonal className={`w-3.5 h-3.5 ${resendingOrderId === order.orderId ? 'animate-spin text-orange-600' : ''}`} />
+                      <span>{resendingOrderId === order.orderId ? 'Sending Email...' : '📧 Resend Delivery Email'}</span>
+                    </button>
+                  )}
+
                   {isPending && (
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <button
@@ -400,9 +442,23 @@ export const AdminOrdersView: React.FC = () => {
                               </button>
                             </div>
                           ) : isAccepted ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted &amp; Delivered
-                            </span>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-black border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted &amp; Delivered
+                              </span>
+                              {order.deliveryEmail && (
+                                <button
+                                  type="button"
+                                  disabled={resendingOrderId === order.orderId}
+                                  onClick={() => handleResendEmail(order)}
+                                  title={`Resend delivery credentials to ${order.deliveryEmail}`}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 disabled:opacity-50 text-orange-700 border border-orange-200 text-[11px] font-extrabold transition-all shadow-xs active:scale-95"
+                                >
+                                  <SendHorizonal className={`w-3 h-3 ${resendingOrderId === order.orderId ? 'animate-spin text-orange-600' : ''}`} />
+                                  <span>{resendingOrderId === order.orderId ? 'Sending...' : 'Resend Email'}</span>
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-black border border-rose-200">
                               <XCircle className="w-3 h-3 text-rose-600" /> Rejected

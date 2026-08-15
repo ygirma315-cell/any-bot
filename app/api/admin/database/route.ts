@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidAdminSession } from '@/lib/admin-session';
 import { getAdminSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { sendTelegramOrderStatusUpdate } from '@/lib/bot';
-import { sendDeliveryEmail, DeliveryItemCredential } from '@/lib/email';
+import { sendDeliveryEmail, DeliveryItemCredential, getSmtpConfigStatus } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -38,6 +38,10 @@ export async function GET(request: Request) {
   if (resource === 'storage') {
     const { data, error } = await db.from('product_storage').select('*').order('created_at', { ascending: false });
     return NextResponse.json({ data: data || [], error: error?.message || null }, { status: error ? 500 : 200 });
+  }
+  if (resource === 'smtp-status') {
+    const status = getSmtpConfigStatus();
+    return NextResponse.json({ success: true, data: status });
   }
   return NextResponse.json({ error: 'Unknown resource.' }, { status: 400 });
 }
@@ -249,6 +253,7 @@ export async function POST(request: Request) {
       };
 
       // 5. Automated Delivery via Email & Telegram Bot DM (awaited so Vercel does not terminate background connection)
+      let emailTask: Promise<{ success: boolean; error?: string; provider?: string }> | null = null;
       const deliveryTasks: Promise<any>[] = [];
 
       console.log(`[Order Fulfillment Check] orderId=${orderId} isAccepted=${isAccepted} deliveryEmail=${deliveryEmail} claimedCredentials=${claimedCredentials.length} orderItems=${orderItems.length}`);
@@ -257,21 +262,18 @@ export async function POST(request: Request) {
       }
 
       if (isAccepted && deliveryEmail && deliveryEmail.includes('@') && claimedCredentials.length > 0) {
-        deliveryTasks.push(
-          sendDeliveryEmail({
-            toEmail: deliveryEmail,
-            customerName: customer?.first_name || 'Customer',
-            orderId: String(orderId),
-            items: claimedCredentials,
-            totalAmount: extraDetails.total
-          }).then(result => {
-            console.log(`[Email Delivery] Result for order ${orderId}:`, JSON.stringify(result));
-            return result;
-          }).catch(emailErr => {
-            console.error('[Email Dispatch Error]', emailErr);
-            return { success: false, error: emailErr.message };
-          })
-        );
+        emailTask = sendDeliveryEmail({
+          toEmail: deliveryEmail,
+          customerName: customer?.first_name || 'Customer',
+          orderId: String(orderId),
+          items: claimedCredentials,
+          totalAmount: extraDetails.total
+        }).catch(emailErr => {
+          console.error('[Email Dispatch Error]', emailErr);
+          return { success: false, error: emailErr.message || String(emailErr) };
+        });
+
+        deliveryTasks.push(emailTask);
       }
 
       deliveryTasks.push(
@@ -289,12 +291,120 @@ export async function POST(request: Request) {
 
       // Await all notification & email tasks before completing the serverless response
       await Promise.allSettled(deliveryTasks);
+      const emailResult = emailTask ? await emailTask : null;
 
       return NextResponse.json({ 
         success: true, 
         orderId, 
         status, 
-        deliveredCredentials: claimedCredentials 
+        deliveredCredentials: claimedCredentials,
+        emailDelivery: deliveryEmail ? {
+          attempted: true,
+          sent: emailResult?.success ?? false,
+          error: emailResult?.error,
+          provider: emailResult?.provider,
+          targetEmail: deliveryEmail
+        } : { attempted: false, reason: 'No delivery email provided' }
+      });
+    } else if (action === 'resend-delivery-email') {
+      const { orderId, targetEmail } = payload || {};
+      if (!orderId) {
+        return NextResponse.json({ success: false, error: 'orderId is required.' }, { status: 400 });
+      }
+
+      const { data: orderData, error: fetchErr } = await db
+        .from('orders')
+        .select('*, order_items(*), telegram_users(*)')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (fetchErr || !orderData) {
+        return NextResponse.json({ success: false, error: `Order ${orderId} not found in database.` }, { status: 404 });
+      }
+
+      const destEmail = targetEmail || orderData.delivery_email;
+      if (!destEmail || !destEmail.includes('@')) {
+        return NextResponse.json({ success: false, error: `No valid delivery email found for order ${orderId}.` }, { status: 400 });
+      }
+
+      let credentialsToSend: DeliveryItemCredential[] = [];
+      if (Array.isArray(orderData.delivered_credentials) && orderData.delivered_credentials.length > 0) {
+        credentialsToSend = orderData.delivered_credentials.map((c: any) => ({
+          productName: c.productName || c.product_name || 'AI Service',
+          price: c.price ? Number(c.price) : undefined,
+          type: c.type || 'account',
+          link: c.link || undefined,
+          username: c.username || undefined,
+          password: c.password || undefined,
+          notes: c.notes || undefined,
+          warranty: c.warranty || 'Warranty Active'
+        }));
+      } else if (Array.isArray(orderData.order_items) && orderData.order_items.length > 0) {
+        credentialsToSend = orderData.order_items.map((item: any) => ({
+          productName: item.product_name || 'AI Product',
+          price: Number(item.price) || undefined,
+          type: 'account',
+          notes: 'Subscription activated. Contact support if you need further credentials.',
+          warranty: item.warranty || 'Warranty Active'
+        }));
+      } else {
+        credentialsToSend = [{
+          productName: 'AI Subscription Service',
+          price: orderData.total ? Number(orderData.total) : undefined,
+          type: 'text',
+          notes: 'Your order has been verified and confirmed. Contact support on Telegram @exo80 if needed.',
+          warranty: 'Warranty Active'
+        }];
+      }
+
+      const customerName = orderData.telegram_users?.first_name || 'Customer';
+      const sendRes = await sendDeliveryEmail({
+        toEmail: destEmail,
+        customerName,
+        orderId: String(orderId),
+        items: credentialsToSend,
+        totalAmount: orderData.total ? Number(orderData.total) : undefined
+      });
+
+      return NextResponse.json({
+        success: sendRes.success,
+        emailSent: sendRes.success,
+        error: sendRes.error,
+        provider: sendRes.provider,
+        targetEmail: destEmail,
+        orderId
+      });
+    } else if (action === 'test-email') {
+      const { targetEmail, customerName = 'Test Admin', smtpOverride } = payload || {};
+      if (!targetEmail || !targetEmail.includes('@')) {
+        return NextResponse.json({ success: false, error: 'Valid targetEmail is required.' }, { status: 400 });
+      }
+
+      const testRes = await sendDeliveryEmail({
+        toEmail: targetEmail,
+        customerName,
+        orderId: '#TEST-LIVE',
+        totalAmount: 19.99,
+        smtpOverride,
+        items: [
+          {
+            productName: 'ChatGPT Plus (Live Test Delivery)',
+            price: 19.99,
+            type: 'account',
+            username: 'test.user@aiunlimited.shop',
+            password: 'DemoPassword2026!',
+            notes: 'This is a verified live test delivery email from your AnyAi Store configuration.',
+            warranty: '30-Day Active Warranty'
+          }
+        ]
+      });
+
+      return NextResponse.json({
+        success: testRes.success,
+        emailSent: testRes.success,
+        error: testRes.error,
+        provider: testRes.provider,
+        targetEmail
       });
     } else if (action === 'clear-orders') {
       ({ error } = await db.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
