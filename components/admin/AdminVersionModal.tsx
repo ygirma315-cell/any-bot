@@ -27,47 +27,54 @@ interface AdminVersionModalProps {
 export const AdminVersionModal: React.FC<AdminVersionModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const currentVersion = 'v2.4.0';
+  const currentVersion = 'v2.5.0';
   const releaseDate = 'August 2026';
 
   const updates = [
     {
-      icon: Zap,
-      color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-      title: 'Instant Order Acceptance & Zero-Lag Sync',
-      desc: 'Completely overhauled order processing pipeline. Eliminated network polling congestion and infinite fetch feedback loops for instantaneous order status updates.'
-    },
-    {
       icon: Mail,
       color: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
-      title: 'Automated SMTP Customer Email Delivery',
-      desc: 'Serverless-resilient SMTP transmission with TLS fallback. Customers immediately receive digital credentials, login accounts, direct access links, and warranty details via email.'
+      title: 'Anti-Spam Email Deliverability & Smart SMTP Auto-Discovery',
+      desc: 'Automatic SPF/DKIM alignment, multipart plain-text fallback, connection pooling, and multi-alias resolution (SMTP_PASS, GMAIL_USER, etc.) to guarantee primary inbox delivery.'
     },
     {
-      icon: Send,
-      color: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
-      title: 'Telegram Customer & Admin Notifications',
-      desc: 'Dual-channel real-time notifications via Telegram Bot. Sends order confirmations to users and alerts store administrators on new payments.'
-    },
-    {
-      icon: Database,
-      color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
-      title: 'Dynamic Product Storage & Stock Claiming',
-      desc: 'Automatically claims unused credentials from the product_storage table upon order acceptance and decrements product inventory in real time.'
+      icon: Zap,
+      color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+      title: 'Instant Order Acceptance & 1-Click Credential Resend',
+      desc: 'Instant order fulfillment with zero-lag background dispatches, real-time toast feedback, and one-click resend button for any accepted digital order.'
     },
     {
       icon: ShieldCheck,
       color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
-      title: 'Dual Token & Cookie Admin Security',
-      desc: 'Secured admin endpoints with cryptographic HMAC SHA-256 tokens and Bearer authentication headers for seamless multi-browser session persistence.'
+      title: 'Hardened Security & Protected Diagnostic Routes',
+      desc: 'All debug and test email routes locked behind cryptographic HMAC admin sessions. Zero sensitive credentials exposed in client code or public repositories.'
+    },
+    {
+      icon: Send,
+      color: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+      title: 'Dual Telegram & Email Automated Fulfillment',
+      desc: 'Simultaneous digital delivery via email and Telegram bot direct message with access links, warranty coverage, and support instructions.'
+    },
+    {
+      icon: Database,
+      color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+      title: 'Dynamic Product Storage & Stock Management',
+      desc: 'Automatically claims unused credentials from the product_storage table upon order acceptance and decrements product inventory in real time.'
     }
   ];
 
   const versionHistory = [
     {
-      version: 'v2.4.0',
+      version: 'v2.5.0',
       tag: 'Current Active',
       tagColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      date: 'August 2026',
+      notes: 'Anti-Spam inbox delivery (SPF/DKIM alignment & multipart fallback), smart multi-alias SMTP resolver, 1-click credential resend, and authenticated live email testing suite.'
+    },
+    {
+      version: 'v2.4.0',
+      tag: 'Stable',
+      tagColor: 'bg-slate-700/50 text-slate-300 border-slate-600/50',
       date: 'August 2026',
       notes: 'Order Acceptance Engine, SMTP Email Reliability, Network Event Loop Elimination, Admin Version Center.'
     },
@@ -261,7 +268,7 @@ export const AdminVersionModal: React.FC<AdminVersionModalProps> = ({ isOpen, on
         {/* Footer */}
         <div className="p-4 sm:p-5 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between gap-3 shrink-0">
           <p className="text-[11px] text-slate-500 font-semibold truncate">
-            AnyAi Store Control Center • System v2.4.0
+            AnyAi Store Control Center • System v2.5.0
           </p>
           <button
             type="button"

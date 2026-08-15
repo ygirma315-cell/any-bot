@@ -448,7 +448,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <span>App Updates</span>
             </div>
             <span className="px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black tracking-wide">
-              v2.4.0
+              v2.5.0
             </span>
           </button>
 
@@ -500,8 +500,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               title="App Version & Recent System Updates"
             >
               <Sparkles className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-              <span className="hidden sm:inline">Version v2.4.0</span>
-              <span className="sm:hidden font-mono text-[11px]">v2.4.0</span>
+              <span className="hidden sm:inline">Version v2.5.0</span>
+              <span className="sm:hidden font-mono text-[11px]">v2.5.0</span>
             </button>
 
             {/* Top Refresh Button */}
