@@ -433,11 +433,15 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onBrowseServices }) 
                               </div>
                             )}
 
-                            {/* Notes / Activation Guide */}
+                            {/* How to Use / Activation Instructions */}
                             {cred.notes && (
-                              <div className="bg-amber-50/70 p-2 rounded-lg border border-amber-200/60 text-[11px] text-amber-900 font-medium">
-                                <span className="font-bold text-[10px] text-amber-800 uppercase block">Instructions / Notes:</span>
-                                <span>{cred.notes}</span>
+                              <div className="bg-amber-50/90 p-3 rounded-xl border border-amber-200 text-xs text-amber-950 space-y-1 shadow-2xs">
+                                <span className="font-black text-[11px] text-amber-900 uppercase flex items-center gap-1">
+                                  📖 How to Use / Activation Instructions:
+                                </span>
+                                <p className="text-[11.5px] text-amber-900 leading-relaxed font-medium">
+                                  {cred.notes}
+                                </p>
                               </div>
                             )}
                           </div>

@@ -331,126 +331,111 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       )}
 
       {/* Responsive 2-Column Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Customer Details, Policy & Methods (lg:col-span-7) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Delivery Email & Compact Payment Method Grid (lg:col-span-7) */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Customer & Delivery Summary Card */}
+          {/* Delivery Email Summary */}
           {cart.length > 0 && (
-            <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-                  <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer &amp; Delivery Destination
-                </span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
-                  <Lock className="w-3 h-3 text-slate-400" /> Delivery Target
-                </span>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
-                    <span className="font-extrabold text-orange-600 truncate block">
-                      @{getTelegramUser().user.username || 'web_customer'}
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Delivery Email</span>
-                    <span className="font-extrabold text-slate-900 truncate block">
-                      {userEmail || 'No email provided'}
-                    </span>
-                  </div>
+            <div className="p-3.5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-[#FF6B00] shrink-0">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Delivery Email</span>
+                  <p className="text-xs font-black text-slate-900 truncate">{userEmail || 'No email entered'}</p>
                 </div>
               </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1 shrink-0">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Instant Delivery
+              </span>
             </div>
           )}
+
+          {/* Compact Side-by-Side Payment Methods Grid */}
+          <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                <Wallet className="w-4 h-4 text-[#FF6B00]" /> Select Payment Method:
+              </h3>
+              {selectedMethod && (
+                <span className="text-[10.5px] font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100">
+                  {selectedMethod.name}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {methods.map((method) => {
+                const isSelected = selectedMethod?.id === method.id;
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setSelectedMethod(method);
+                    }}
+                    className={`p-3 rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all duration-200 text-center relative ${
+                      isSelected
+                        ? 'bg-orange-50/60 border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/20 scale-102'
+                        : 'bg-slate-50/80 hover:bg-slate-100/80 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#FF6B00] text-white flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </div>
+                    )}
+                    <div className="w-10 h-10 rounded-xl bg-white p-1.5 border border-slate-200/80 shadow-xs flex items-center justify-center shrink-0">
+                      <Image
+                        src={method.logoPath}
+                        alt={method.name}
+                        width={32}
+                        height={32}
+                        className="object-contain w-full h-full"
+                      />
+                    </div>
+                    <span className={`text-[11px] font-extrabold line-clamp-1 ${
+                      isSelected ? 'text-[#FF6B00]' : 'text-slate-800'
+                    }`}>
+                      {method.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Payment & Refund Policy */}
           {cart.length > 0 && (
-            <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
-              <p className="font-extrabold text-orange-950 flex items-center gap-1">
-                <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment &amp; Refund Policy:
+            <div className="p-3 bg-orange-50/60 rounded-2xl border border-orange-200/70 text-xs space-y-1">
+              <p className="font-extrabold text-orange-950 flex items-center gap-1 text-[11.5px]">
+                <FileText className="w-3.5 h-3.5 text-[#FF6B00]" /> Payment &amp; Warranty Policy:
               </p>
-              <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
-                <p>• <strong>Instant Dispatch:</strong> Product credentials will be sent to your email immediately upon verification.</p>
-                <p>• <strong>Warranty Products:</strong> Refunds &amp; replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
-                <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
+              <div className="space-y-0.5 text-[11px] text-slate-700 leading-tight">
+                <p>• Credentials and access links are delivered to your email upon confirmation.</p>
+                <p>• Warranty replacements are active for the duration indicated per product.</p>
               </div>
             </div>
           )}
-
-          {/* Methods Selector Cards */}
-          <div className="space-y-2.5">
-            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-              Select Payment Method:
-            </h3>
-            {methods.map((method) => {
-              const isSelected = selectedMethod?.id === method.id;
-              return (
-                <div
-                  key={method.id}
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setSelectedMethod(method);
-                  }}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
-                    isSelected
-                      ? 'bg-white/95 backdrop-blur-md border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/10'
-                      : 'bg-white/80 backdrop-blur-md border-slate-200/80 hover:border-slate-300 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 relative rounded-xl overflow-hidden p-1.5 border border-slate-100 bg-white shadow-xs flex items-center justify-center shrink-0">
-                        <Image
-                          src={method.logoPath}
-                          alt={method.name}
-                          width={36}
-                          height={36}
-                          className="object-contain w-full h-full"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="heading-font text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                          {method.name}
-                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                            {method.badge}
-                          </span>
-                        </h4>
-                        <p className="text-[11px] text-slate-500">{method.subtitle}</p>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                        isSelected ? 'border-[#FF6B00] bg-[#FF6B00] text-white' : 'border-slate-300'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        {/* Right Column: Sticky Transfer Details & Submit CTA (lg:col-span-5) */}
+        {/* Right Column: Transfer Details & Submit CTA (lg:col-span-5) */}
         <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
           {selectedMethod && (
-            <div className="p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-xs font-extrabold text-slate-900 uppercase">Transfer Summary</span>
-                <span className="text-xs font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+            <div className="p-4 sm:p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 uppercase">Transfer Details</span>
+                <span className="text-xs font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
                   {selectedMethod.name}
                 </span>
               </div>
 
               {cart.length > 0 ? (
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                  <span className="text-xs font-medium text-slate-600">Total Due:</span>
-                  <span className="heading-font text-xl font-extrabold text-[#FF6B00]">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+                  <span className="text-xs font-semibold text-slate-600">Total Amount:</span>
+                  <span className="heading-font text-xl font-black text-[#FF6B00]">
                     ${totalAmount.toFixed(2)} USD
                   </span>
                 </div>
@@ -461,24 +446,25 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 </div>
               )}
 
+              {/* Clean Account Number / Address Copy Card */}
               <div>
-                <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block mb-1">
-                  Send Payment To ({selectedMethod.accountName}):
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight block mb-1">
+                  Send Payment To ({selectedMethod.accountName || selectedMethod.name}):
                 </label>
-                <div className="flex items-center justify-between p-3 bg-slate-900 text-white rounded-xl font-mono text-xs shadow-xs">
-                  <span className="truncate pr-2">{selectedMethod.accountId}</span>
+                <div className="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border-2 border-slate-200 rounded-xl font-mono text-xs shadow-xs transition-colors">
+                  <span className="truncate pr-2 font-bold text-slate-900 select-all">{selectedMethod.accountId}</span>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCopyAccount(selectedMethod.accountId);
                     }}
-                    className="py-1 px-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold rounded-lg border border-white/20 transition shrink-0 flex items-center gap-1"
+                    className="py-1.5 px-3 bg-[#FF6B00] hover:bg-[#E66000] text-white text-[10px] font-black rounded-lg shadow-xs transition shrink-0 flex items-center gap-1 active:scale-95"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        <span>Copied</span>
+                        <Check className="w-3 h-3 text-white stroke-[3]" />
+                        <span>Copied!</span>
                       </>
                     ) : (
                       <>
@@ -490,8 +476,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1 bg-orange-50/50 p-3.5 rounded-xl border border-orange-100">
-                <p className="text-[11px] font-bold text-orange-950 mb-1">Payment Instructions:</p>
+              {/* Step-by-Step Instructions */}
+              <div className="space-y-1 bg-orange-50/40 p-3 rounded-xl border border-orange-100">
+                <p className="text-[11px] font-bold text-orange-950 mb-1">Instructions:</p>
                 {selectedMethod.instructions.map((step, idx) => (
                   <p key={idx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
                     <span className="font-bold text-[#FF6B00]">{idx + 1}.</span>
@@ -512,12 +499,12 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                     handlePaidSubmit();
                   }
                 }}
-                className="w-full py-4 text-xs font-extrabold rounded-2xl shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95 disabled:opacity-60"
+                className="w-full py-3.5 text-xs font-black rounded-xl shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95 disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Submitting Order to Server...</span>
+                    <span>Submitting Order...</span>
                   </>
                 ) : cart.length === 0 ? (
                   <>
@@ -527,7 +514,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 ) : (
                   <>
                     <Send className="w-4 h-4 text-white" />
-                    <span>Submit Payment (I&apos;ve Paid)</span>
+                    <span>I&apos;ve Paid &bull; Submit Order</span>
                   </>
                 )}
               </button>

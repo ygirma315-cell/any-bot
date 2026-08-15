@@ -199,7 +199,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
 
             <div>
               <label className="font-bold text-slate-700 block mb-1">
-                Stock Quantity
+                Stock Quantity (Auto-managed via Storage)
               </label>
               <input
                 type="number"
@@ -208,20 +208,7 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
                 onChange={(e) => setStock(Number(e.target.value))}
                 className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
               />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Sort Position (#)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
-              />
-              <p className="text-[10px] text-slate-400 font-semibold mt-1">Position on store page (1 = first)</p>
+              <p className="text-[10px] text-slate-400 font-semibold mt-1">Stock is automatically updated when accounts are added to Product Storage</p>
             </div>
           </div>
 
@@ -301,30 +288,18 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             </div>
 
             {/* If Warranty is chosen, render duration number input */}
-            {isWarranty ? (
-              <div className="space-y-2 pt-2 border-t border-orange-200/60 animate-fadeIn">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    Warranty Duration (Days)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={warrantyDays}
-                    onChange={(e) => setWarrantyDays(Number(e.target.value))}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-                {/* Live Logo Badge Preview */}
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Preview Badge: <strong>{warrantyDays} Days Warranty</strong> (Green Badge)</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] animate-fadeIn">
-                <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>Preview Badge: <strong>No Warranty</strong> (Red Badge)</span>
+            {isWarranty && (
+              <div className="pt-2 border-t border-orange-200/60 animate-fadeIn">
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Warranty Duration (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={warrantyDays}
+                  onChange={(e) => setWarrantyDays(Number(e.target.value))}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-orange-500"
+                />
               </div>
             )}
           </div>

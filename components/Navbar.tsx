@@ -87,26 +87,26 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
             <button
               key={tab.id}
               onClick={(e) => handleTabClick(e, tab.id as 'services' | 'order' | 'payment' | 'status')}
-              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-300 ${
-                isActive ? 'scale-105' : 'opacity-70 hover:opacity-100'
+              className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-300 ${
+                isActive ? 'scale-105 opacity-100' : 'opacity-85 hover:opacity-100'
               }`}
             >
               {/* Active Indicator Glow Background */}
               {isActive && (
-                <div className="absolute inset-0 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-xs transition-all duration-300 animate-fadeIn" />
+                <div className="absolute inset-0 bg-slate-100/90 rounded-2xl border-2 border-slate-300/80 shadow-xs transition-all duration-300 animate-fadeIn" />
               )}
 
               <div className="relative z-10 flex flex-col items-center gap-1">
                 <div className="relative">
-                  {/* High-Vibe Icon Tile */}
+                  {/* Vibrant Gradient Tile - Always Colorful by Default */}
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-md bg-gradient-to-tr ${tab.gradient} text-white ${
                       isActive
-                        ? `bg-gradient-to-tr ${tab.gradient} text-white shadow-md scale-110`
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'ring-2 ring-slate-900/20 scale-110 shadow-lg'
+                        : 'shadow-sm opacity-90 hover:opacity-100'
                     }`}
                   >
-                    <Icon className="w-4 h-4 stroke-[2.2]" />
+                    <Icon className="w-4 h-4 stroke-[2.4]" />
                   </div>
 
                   {/* Badge count */}
@@ -117,8 +117,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, cartCou
                   ) : null}
                 </div>
 
-                <span className={`text-[10.5px] font-extrabold tracking-tight transition-colors ${
-                  isActive ? 'text-slate-900' : 'text-slate-500'
+                <span className={`text-[10.5px] font-black tracking-tight transition-colors ${
+                  isActive ? 'text-slate-950 font-black' : 'text-slate-700'
                 }`}>
                   {tab.label}
                 </span>
