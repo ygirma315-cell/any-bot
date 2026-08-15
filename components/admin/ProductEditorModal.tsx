@@ -96,9 +96,9 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
       isWarranty,
       warranty: isWarranty ? `${Number(warrantyDays)} Days Warranty` : 'No Warranty',
       warrantyDays: isWarranty ? Number(warrantyDays) : 0,
-      available: stock > 0,
-      stock: Number(stock),
-      sortOrder: Number(sortOrder) || 0,
+      available: (product?.stock ?? stock ?? 0) > 0,
+      stock: product?.stock ?? stock ?? 0,
+      sortOrder: product?.sortOrder ?? (Number(sortOrder) || 0),
       category: finalCategory,
       logoPath: product?.logoPath || '/assets/products/chatgpt.png',
       accentColor: product?.accentColor || 'rgba(249, 115, 22, 0.4)',
@@ -181,35 +181,20 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             />
           </div>
 
-          {/* Price, Stock & Sort Position Row */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Price ($ USD) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">
-                Stock Quantity (Auto-managed via Storage)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={stock}
-                onChange={(e) => setStock(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
-              />
-              <p className="text-[10px] text-slate-400 font-semibold mt-1">Stock is automatically updated when accounts are added to Product Storage</p>
-            </div>
+          {/* Price Row */}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Price ($ USD) <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              placeholder="e.g. 5.00"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:border-orange-500 focus:bg-white"
+            />
           </div>
 
           {/* Short Description (With Limit) */}
