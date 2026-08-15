@@ -206,8 +206,8 @@ export const AdminCategoriesView: React.FC<AdminCategoriesViewProps> = ({
 
                     {/* Associated Products Count */}
                     <td className="py-3.5 px-3">
-                      <span className="inline-block text-[11px] font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">
-                        {count} Products
+                      <span className="inline-block text-[11px] font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-md min-w-[28px] text-center">
+                        {count}
                       </span>
                     </td>
 
