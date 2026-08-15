@@ -98,11 +98,16 @@ export const AdminOrdersView: React.FC = () => {
     const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
     
     if (result && !result.success) {
-      setToastMessage(`⚠️ Warning: Status updated locally, but server returned: ${result.error}`);
+      const errDetail = result.error || 'Unknown error';
+      if (errDetail.includes('login required') || errDetail.includes('401')) {
+        setToastMessage(`❌ Accept failed: Admin session expired. Please log out and log back in.`);
+      } else {
+        setToastMessage(`❌ Accept failed: ${errDetail}`);
+      }
     } else {
       setToastMessage(`✅ Order ${order.orderId} ACCEPTED! Bot notification sent to ${userHandle}.`);
     }
-    setTimeout(() => setToastMessage(null), 4500);
+    setTimeout(() => setToastMessage(null), 5000);
   };
 
   const handleRejectOrder = async (order: OrderPayload) => {
@@ -110,11 +115,16 @@ export const AdminOrdersView: React.FC = () => {
     const result = await updateOrderStatus(order.orderId, 'Rejected', order);
     setProcessingOrderId(null);
     if (result && !result.success) {
-      setToastMessage(`⚠️ Warning: Status updated locally, but server returned: ${result.error}`);
+      const errDetail = result.error || 'Unknown error';
+      if (errDetail.includes('login required') || errDetail.includes('401')) {
+        setToastMessage(`❌ Reject failed: Admin session expired. Please log out and log back in.`);
+      } else {
+        setToastMessage(`❌ Reject failed: ${errDetail}`);
+      }
     } else {
       setToastMessage(`❌ Order ${order.orderId} REJECTED. Bot notification sent.`);
     }
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 5000);
   };
 
   const filteredOrders = orders.filter((o) => {

@@ -10,10 +10,30 @@ export default function AdminPage() {
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('ai_store_admin_authenticated');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
+    if (authStatus !== 'true') {
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+    // Verify the server-side session cookie is still valid by hitting a
+    // lightweight authenticated endpoint. If the cookie expired or was
+    // cleared, force the user back to login instead of showing a broken
+    // dashboard where every API call fails with 401.
+    fetch('/api/admin/database?resource=orders', { credentials: 'include' })
+      .then(res => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          // Session expired or invalid — clear stale client state
+          sessionStorage.removeItem('ai_store_admin_authenticated');
+          sessionStorage.removeItem('ai_store_admin_token');
+        }
+      })
+      .catch(() => {
+        // Network error — let them through anyway; the dashboard will
+        // show appropriate errors on its own fetch attempts.
+        setIsAuthenticated(true);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleLoginSuccess = () => {
@@ -22,6 +42,7 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('ai_store_admin_authenticated');
+    sessionStorage.removeItem('ai_store_admin_token');
     void fetch('/api/admin/session', { method: 'DELETE' });
     setIsAuthenticated(false);
   };

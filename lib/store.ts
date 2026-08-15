@@ -285,6 +285,9 @@ export async function fetchOrdersFromSupabase(): Promise<OrderPayload[]> {
       credentials: 'include'
     });
     if (!response.ok) {
+      // 401 means the admin session expired or was never established.
+      // Return current session state instead of silently masking the error.
+      console.warn('Admin orders fetch failed with status', response.status);
       return getStoredOrders();
     }
     const { data } = await response.json();
@@ -616,6 +619,23 @@ export async function updateOrderStatus(
   status: OrderPayload['status'],
   existingOrder?: Partial<OrderPayload>
 ): Promise<{ success: boolean; error?: string }> {
+  // Persist to DB FIRST before touching local state. The server handles
+  // credential claiming and sends back the final status + delivered
+  // credentials, so we never need to speculatively modify local state.
+  const dbResult = await syncAdminDatabase('update-order-status', {
+    orderId,
+    status,
+    telegramUser: existingOrder?.telegramUser,
+    deliveryEmail: existingOrder?.deliveryEmail,
+    total: existingOrder?.total
+  });
+
+  if (!dbResult.success) {
+    // DB sync failed — do NOT update local state so the UI stays accurate.
+    return dbResult;
+  }
+
+  // DB sync succeeded — now update local session state to match.
   let updatedOrder: OrderPayload | undefined;
   sessionOrders = sessionOrders.map(order => {
     if (order.orderId === orderId) {
@@ -640,60 +660,14 @@ export async function updateOrderStatus(
     sessionOrders = [updatedOrder, ...sessionOrders];
   }
 
-  const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
-  if (isAccepted) {
-    const storage = getStoredStorage();
-    const orderItems = updatedOrder?.items || existingOrder?.items || [];
-    const claimedCreds: any[] = [];
-    let modifiedStorage = false;
-
-    for (const itm of orderItems) {
-      const prodId = itm.id;
-      const qty = itm.quantity || 1;
-      let count = 0;
-      for (const s of storage) {
-        if (s.product_id === prodId && !s.is_used && count < qty) {
-          s.is_used = true;
-          s.order_id = orderId;
-          s.used_at = new Date().toISOString();
-          claimedCreds.push({
-            productName: itm.name,
-            price: itm.price,
-            type: s.type,
-            link: s.link,
-            username: s.username,
-            password: s.password,
-            notes: s.notes,
-            warranty: itm.warranty
-          });
-          count++;
-          modifiedStorage = true;
-        }
-      }
-    }
-
-    if (modifiedStorage) {
-      saveStoredStorage(storage, false);
-      if (updatedOrder) {
-        updatedOrder.deliveredCredentials = claimedCreds;
-      }
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('ai_store_products_updated'));
-      }
-    }
-  }
-
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('ai_store_orders_updated'));
   }
 
-  return await syncAdminDatabase('update-order-status', {
-    orderId,
-    status,
-    telegramUser: updatedOrder?.telegramUser || existingOrder?.telegramUser,
-    deliveryEmail: updatedOrder?.deliveryEmail || existingOrder?.deliveryEmail,
-    total: updatedOrder?.total || existingOrder?.total
-  });
+  // Re-fetch from DB to get server-assigned delivered credentials etc.
+  fetchOrdersFromSupabase();
+
+  return dbResult;
 }
 
 export function clearAllOrders(): void {
