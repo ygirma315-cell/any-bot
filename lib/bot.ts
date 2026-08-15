@@ -135,6 +135,7 @@ export async function sendTelegramOrderStatusUpdate(
     total?: number;
     credentials?: {
       productName: string;
+      price?: number;
       type?: 'link' | 'account' | 'key' | 'text';
       link?: string;
       username?: string;
@@ -175,8 +176,9 @@ export async function sendTelegramOrderStatusUpdate(
   // Format digital credentials if available
   let credentialsFormatted = '';
   if (extraDetails?.credentials && extraDetails.credentials.length > 0) {
-    credentialsFormatted = '\n\n🔑 <b>YOUR DIGITAL PRODUCT ACCESS:</b>\n' + extraDetails.credentials.map((cred, idx) => {
-      let block = `\n📦 <b>${idx + 1}. ${escapeHtml(cred.productName)}</b>`;
+    credentialsFormatted = '\n\n🔑 <b>YOUR SUBSCRIPTION ACCESS DETAILS:</b>\n' + extraDetails.credentials.map((cred, idx) => {
+      const priceText = cred.price !== undefined ? ` — <b>$${cred.price.toFixed(2)}</b>` : '';
+      let block = `\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>${idx + 1}. ${escapeHtml(cred.productName)}</b>${priceText}\n<i>From AnyAi STORE: Here is your ${escapeHtml(cred.productName)} subscription access:</i>`;
       if (cred.link) {
         block += `\n🔗 <b>Access Link:</b> ${escapeHtml(cred.link)}`;
       }
@@ -187,7 +189,10 @@ export async function sendTelegramOrderStatusUpdate(
         block += `\n🔒 <b>Password:</b> <code>${escapeHtml(cred.password)}</code>`;
       }
       if (cred.notes) {
-        block += `\n📝 <b>Notes:</b> <i>${escapeHtml(cred.notes)}</i>`;
+        block += `\n📝 <b>Instructions:</b> <i>${escapeHtml(cred.notes)}</i>`;
+      }
+      if (cred.warranty) {
+        block += `\n🛡️ <b>Warranty:</b> <i>${escapeHtml(cred.warranty)}</i>`;
       }
       return block;
     }).join('\n');

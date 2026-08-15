@@ -118,6 +118,7 @@ export async function POST(request: Request) {
               for (const cred of availableCreds) {
                 claimedCredentials.push({
                   productName: prodName,
+                  price: Number(item.price) || undefined,
                   type: cred.type,
                   link: cred.link || undefined,
                   username: cred.username || undefined,
@@ -130,6 +131,7 @@ export async function POST(request: Request) {
               // Fallback default fulfillment entry if no storage stock was preloaded
               claimedCredentials.push({
                 productName: prodName,
+                price: Number(item.price) || undefined,
                 type: 'text',
                 notes: 'Your access has been activated by the admin. Check order support if needed.',
                 warranty
