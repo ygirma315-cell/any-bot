@@ -144,6 +144,7 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
   `;
 
   if (smtpHost && smtpUser && smtpPass) {
+    console.log(`[Email Delivery] SMTP configured: host=${smtpHost} port=${smtpPort} user=${smtpUser} from=${fromEmail}`);
     try {
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.createTransport({
@@ -176,7 +177,7 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
       return { success: false, error: err.message };
     }
   } else {
-    console.log(`[Email Delivery Notice] SMTP not configured in .env.local (SMTP_HOST/SMTP_USER/SMTP_PASS missing). Email prepared for ${toEmail} with ${items.length} credential items.`);
+    console.warn(`[Email Delivery] SKIPPED — SMTP NOT CONFIGURED. Missing env vars. SMTP_HOST=${smtpHost || 'MISSING'} SMTP_USER=${smtpUser || 'MISSING'} SMTP_PASS=${smtpPass ? 'SET' : 'MISSING'}. Email prepared for ${toEmail} with ${items.length} credential items but NOT sent.`);
     return { success: true };
   }
 }

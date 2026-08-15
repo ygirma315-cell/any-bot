@@ -238,6 +238,13 @@ export async function POST(request: Request) {
       };
 
       // 5. Automated Delivery via Email (dispatched in background, non-blocking)
+      console.log(`[Email Check] orderId=${orderId} isAccepted=${isAccepted} deliveryEmail=${deliveryEmail} claimedCredentials=${claimedCredentials.length} orderItems=${orderItems.length}`);
+      if (!deliveryEmail) {
+        console.warn(`[Email Delivery] Skipped: no delivery email found for order ${orderId}. orderRow.delivery_email=${orderRow?.delivery_email} payload.deliveryEmail=${payload.deliveryEmail}`);
+      }
+      if (claimedCredentials.length === 0) {
+        console.warn(`[Email Delivery] Skipped: no claimed credentials for order ${orderId}. orderItems=${JSON.stringify(orderItems.map((i: any) => ({ id: i.id, product_id: i.product_id, name: i.product_name || i.name })))}`);
+      }
       if (isAccepted && deliveryEmail && deliveryEmail.includes('@') && claimedCredentials.length > 0) {
         sendDeliveryEmail({
           toEmail: deliveryEmail,
@@ -245,6 +252,8 @@ export async function POST(request: Request) {
           orderId: String(orderId),
           items: claimedCredentials,
           totalAmount: extraDetails.total
+        }).then(result => {
+          console.log(`[Email Delivery] Result for order ${orderId}:`, JSON.stringify(result));
         }).catch(emailErr => {
           console.error('[Background Email Dispatch Error]', emailErr);
         });
