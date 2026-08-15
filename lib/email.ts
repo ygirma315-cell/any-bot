@@ -36,32 +36,120 @@ export interface EmailServiceStatus {
   hasResendKey: boolean;
 }
 
-export function getSmtpConfigStatus(): EmailServiceStatus {
-  const smtpHost = (process.env.SMTP_HOST || process.env.EMAIL_SERVER_HOST || '').trim();
-  const smtpPort = Number(process.env.SMTP_PORT || process.env.EMAIL_SERVER_PORT || 587);
-  const smtpUser = (process.env.SMTP_USER || process.env.EMAIL_SERVER_USER || '').trim();
-  const smtpPass = (process.env.SMTP_PASS || process.env.EMAIL_SERVER_PASSWORD || '').trim();
-  const resendKey = (process.env.RESEND_API_KEY || '').trim();
-  
-  // Clean from address ensuring domain alignment
+function resolveEmailConfig(smtpOverride?: DeliveryEmailPayload['smtpOverride']) {
+  // Check all possible environment variable aliases
+  let smtpHost = (
+    smtpOverride?.host ||
+    process.env.SMTP_HOST ||
+    process.env.EMAIL_SERVER_HOST ||
+    process.env.MAIL_HOST ||
+    process.env.EMAIL_HOST ||
+    process.env.GMAIL_HOST ||
+    ''
+  ).trim();
+
+  let smtpUser = (
+    smtpOverride?.user ||
+    process.env.SMTP_USER ||
+    process.env.SMTP_USERNAME ||
+    process.env.SMTP_EMAIL ||
+    process.env.EMAIL_SERVER_USER ||
+    process.env.EMAIL_USER ||
+    process.env.EMAIL_USERNAME ||
+    process.env.MAIL_USERNAME ||
+    process.env.MAIL_USER ||
+    process.env.GMAIL_USER ||
+    ''
+  ).trim();
+
+  let smtpPass = (
+    smtpOverride?.pass ||
+    process.env.SMTP_PASS ||
+    process.env.SMTP_PASSWORD ||
+    process.env.EMAIL_SERVER_PASSWORD ||
+    process.env.EMAIL_PASSWORD ||
+    process.env.EMAIL_PASS ||
+    process.env.MAIL_PASSWORD ||
+    process.env.MAIL_PASS ||
+    process.env.GMAIL_PASS ||
+    process.env.GMAIL_PASSWORD ||
+    process.env.GMAIL_APP_PASSWORD ||
+    process.env.SMTP_KEY ||
+    ''
+  ).trim();
+
+  let rawPort = (
+    smtpOverride?.port ||
+    process.env.SMTP_PORT ||
+    process.env.EMAIL_SERVER_PORT ||
+    process.env.MAIL_PORT ||
+    process.env.EMAIL_PORT ||
+    ''
+  );
+
+  const resendKey = (
+    process.env.RESEND_API_KEY ||
+    process.env.RESEND_KEY ||
+    process.env.RESEND_TOKEN ||
+    ''
+  ).trim();
+
+  // Smart Gmail auto-detection if host wasn't explicitly provided
+  if (!smtpHost && (smtpUser.includes('@gmail.com') || smtpUser.includes('@googlemail.com'))) {
+    smtpHost = 'smtp.gmail.com';
+  }
+
+  const smtpPort = rawPort ? Number(rawPort) : (smtpHost.includes('gmail') ? 465 : 587);
+  const isSecure = smtpOverride?.secure !== undefined 
+    ? smtpOverride.secure 
+    : (process.env.SMTP_SECURE === 'true' || process.env.MAIL_SECURE === 'true' || smtpPort === 465);
+
   let defaultFrom = 'AnyAi STORE <delivery@aiunlimited.shop>';
   if (smtpUser && smtpUser.includes('@')) {
     defaultFrom = `AnyAi STORE <${smtpUser}>`;
   }
-  const fromEmail = (process.env.SMTP_FROM || process.env.EMAIL_FROM || defaultFrom).trim();
+  let fromEmail = (
+    smtpOverride?.from ||
+    process.env.SMTP_FROM ||
+    process.env.EMAIL_FROM ||
+    process.env.MAIL_FROM ||
+    defaultFrom
+  ).trim();
+
+  if (smtpHost.includes('gmail') && smtpUser.includes('@') && !fromEmail.includes(smtpUser)) {
+    fromEmail = `AnyAi STORE <${smtpUser}>`;
+  }
 
   const isSmtpConfigured = Boolean(smtpHost && smtpUser && smtpPass);
   const isResendConfigured = Boolean(resendKey);
 
   return {
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPass,
+    isSecure,
+    resendKey,
+    fromEmail,
+    isSmtpConfigured,
+    isResendConfigured,
     isConfigured: isSmtpConfigured || isResendConfigured,
-    provider: isResendConfigured ? 'Resend' : isSmtpConfigured ? 'SMTP' : 'None',
-    host: smtpHost || 'NOT_SET',
-    port: smtpPort,
-    user: smtpUser ? `${smtpUser.slice(0, 3)}***@${smtpUser.split('@')[1] || 'domain'}` : 'NOT_SET',
-    hasPass: Boolean(smtpPass),
-    from: fromEmail,
-    hasResendKey: isResendConfigured
+    provider: (isResendConfigured ? 'Resend' : isSmtpConfigured ? 'SMTP' : 'None') as 'SMTP' | 'Resend' | 'None'
+  };
+}
+
+export function getSmtpConfigStatus(): EmailServiceStatus {
+  const conf = resolveEmailConfig();
+
+  return {
+    isConfigured: conf.isConfigured,
+    provider: conf.provider,
+    host: conf.smtpHost || 'NOT_SET',
+    port: conf.smtpPort,
+    user: conf.smtpUser ? `${conf.smtpUser.slice(0, 3)}***@${conf.smtpUser.split('@')[1] || 'domain'}` : 'NOT_SET',
+    hasPass: Boolean(conf.smtpPass),
+    from: conf.fromEmail,
+    hasResendKey: conf.isResendConfigured
   };
 }
 
@@ -72,25 +160,8 @@ export async function sendDeliveryEmail(payload: DeliveryEmailPayload): Promise<
     return { success: false, error: 'Invalid destination email address.' };
   }
 
-  // SMTP Settings from process.env (or optional override)
-  const smtpHost = (smtpOverride?.host || process.env.SMTP_HOST || process.env.EMAIL_SERVER_HOST || '').trim();
-  const smtpPort = Number(smtpOverride?.port || process.env.SMTP_PORT || process.env.EMAIL_SERVER_PORT || 587);
-  const smtpUser = (smtpOverride?.user || process.env.SMTP_USER || process.env.EMAIL_SERVER_USER || '').trim();
-  const smtpPass = (smtpOverride?.pass || process.env.SMTP_PASS || process.env.EMAIL_SERVER_PASSWORD || '').trim();
-  const isSecure = smtpOverride?.secure !== undefined ? smtpOverride.secure : (process.env.SMTP_SECURE === 'true' || smtpPort === 465);
-  const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
-
-  // ANTI-SPAM SENDER ALIGNMENT:
-  // If sending via Gmail SMTP, the 'From' address MUST match the authenticated Gmail user
-  // so SPF & DKIM align with Google servers, preventing emails from landing in Spam.
-  let resolvedFrom = 'AnyAi STORE <delivery@aiunlimited.shop>';
-  if (smtpUser && smtpUser.includes('@')) {
-    resolvedFrom = `AnyAi STORE <${smtpUser}>`;
-  }
-  let fromEmail = (smtpOverride?.from || process.env.SMTP_FROM || process.env.EMAIL_FROM || resolvedFrom).trim();
-  if (smtpHost.includes('gmail') && smtpUser.includes('@') && !fromEmail.includes(smtpUser)) {
-    fromEmail = `AnyAi STORE <${smtpUser}>`;
-  }
+  const config = resolveEmailConfig(smtpOverride);
+  const { smtpHost, smtpPort, smtpUser, smtpPass, isSecure, resendKey: resendApiKey, fromEmail } = config;
 
   // Generate Multipart Plain Text fallback (Critical for Spam Filters)
   const itemsPlainText = items.map((item, idx) => {
