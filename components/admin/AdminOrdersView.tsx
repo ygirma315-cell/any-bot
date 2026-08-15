@@ -15,11 +15,38 @@ export const AdminOrdersView: React.FC = () => {
   const [confirmPasswordInput, setConfirmPasswordInput] = useState<string>('');
   const [clearError, setClearError] = useState<string | null>(null);
 
-  const loadOrders = () => {
-    setOrders(getStoredOrders());
-    fetchOrdersFromSupabase().then((data) => {
-      if (data && Array.isArray(data)) setOrders(data);
-    });
+  const [isManualLoading, setIsManualLoading] = useState<boolean>(false);
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+
+  const areOrdersEqual = (a: OrderPayload[], b: OrderPayload[]) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].orderId !== b[i].orderId || a[i].status !== b[i].status) return false;
+    }
+    return true;
+  };
+
+  const loadOrders = async (isManual = false) => {
+    if (isManual) setIsManualLoading(true);
+    try {
+      const data = await fetchOrdersFromSupabase();
+      if (data && Array.isArray(data)) {
+        setOrders(prev => areOrdersEqual(prev, data) ? prev : data);
+      } else {
+        const stored = getStoredOrders();
+        setOrders(prev => areOrdersEqual(prev, stored) ? prev : stored);
+      }
+      if (isManual) {
+        setToastMessage('⚡ Orders refreshed from Supabase DB!');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch {
+      // ignore background error
+    } finally {
+      if (isManual) {
+        setIsManualLoading(false);
+      }
+    }
   };
 
   const handleOpenClearModal = () => {
@@ -39,7 +66,7 @@ export const AdminOrdersView: React.FC = () => {
     }
 
     clearAllOrders();
-    loadOrders();
+    loadOrders(false);
     setIsClearModalOpen(false);
     setConfirmPasswordInput('');
     setToastMessage('🗑️ All order history deleted permanently from Supabase DB & Local!');
@@ -47,21 +74,22 @@ export const AdminOrdersView: React.FC = () => {
   };
 
   useEffect(() => {
-    loadOrders();
-    const handleUpdate = () => loadOrders();
+    loadOrders(false);
+    const handleUpdate = () => loadOrders(false);
     window.addEventListener('ai_store_orders_updated', handleUpdate);
 
+    // Calm 30-second background poll (skipped if an order is currently being accepted/rejected)
     const interval = setInterval(() => {
-      loadOrders();
-    }, 5000);
+      if (!processingOrderId && !isClearModalOpen) {
+        loadOrders(false);
+      }
+    }, 30000);
 
     return () => {
       window.removeEventListener('ai_store_orders_updated', handleUpdate);
       clearInterval(interval);
     };
-  }, []);
-
-  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+  }, [processingOrderId, isClearModalOpen]);
 
   const handleAcceptOrder = async (order: OrderPayload) => {
     setProcessingOrderId(order.orderId);
@@ -136,11 +164,11 @@ export const AdminOrdersView: React.FC = () => {
 
           <button
             type="button"
-            onClick={loadOrders}
+            onClick={() => loadOrders(true)}
             className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 shrink-0"
-            title="Refresh orders"
+            title="Refresh orders from database"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${isManualLoading ? 'animate-spin text-orange-600' : ''}`} />
           </button>
 
           <button
@@ -182,7 +210,13 @@ export const AdminOrdersView: React.FC = () => {
                 {filteredOrders.map((order) => {
                   const isPending = order.status === 'Pending' || order.status === 'Payment Submitted';
                   const isAccepted = order.status === 'Accepted' || order.status === 'Completed' || order.status === 'Payment Confirmed';
-                  const userHandle = order.telegramUser.username ? `@${order.telegramUser.username}` : order.telegramUser.first_name;
+                  const isWeb = Boolean(
+                    order.telegramUser.id >= 8000000000 || 
+                    order.telegramUser.id === 987654321 || 
+                    (!order.telegramUser.username && order.telegramUser.first_name?.toLowerCase().includes('web'))
+                  );
+                  const userHandle = isWeb ? '-' : (order.telegramUser.username ? `@${order.telegramUser.username}` : (order.telegramUser.first_name || '-'));
+                  const creds = order.deliveredCredentials || [];
 
                   return (
                     <tr key={order.orderId} className="hover:bg-slate-50/50 transition-colors">
@@ -190,19 +224,34 @@ export const AdminOrdersView: React.FC = () => {
                         <div className="font-bold text-slate-900">
                           {order.items.map((i) => `${i.name} (×${i.quantity})`).join(', ')}
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 tracking-tight">
+                        <div className="text-[10px] font-mono text-slate-400 tracking-tight mt-0.5">
                           {order.orderId} · {order.timestamp}
                         </div>
+                        {isAccepted && creds.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {creds.map((c, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded">
+                                🔑 {c.product_name || c.type || 'Credential'}: {c.username || c.link ? (c.username ? `${c.username}` : 'Link') : 'Assigned'}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md text-[11px]">
-                          {userHandle}
-                        </span>
+                        {isWeb ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md text-[11px] border border-blue-100">
+                            🌐 Web Visitor
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md text-[11px]">
+                            {userHandle}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
-                        {order.telegramUser.id || 'N/A'}
+                        {isWeb ? <span className="text-slate-400 font-bold">-</span> : (order.telegramUser.id || '-')}
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -230,7 +279,7 @@ export const AdminOrdersView: React.FC = () => {
                               className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-xs"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>{processingOrderId === order.orderId ? 'Saving...' : 'Accept'}</span>
+                              <span>{processingOrderId === order.orderId ? 'Saving...' : 'Accept & Fulfill'}</span>
                             </button>
                             <button
                               type="button"
@@ -244,7 +293,7 @@ export const AdminOrdersView: React.FC = () => {
                           </div>
                         ) : isAccepted ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted &amp; Delivered
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">

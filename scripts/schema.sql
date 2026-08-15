@@ -84,6 +84,7 @@ CREATE TABLE public.orders (
     total NUMERIC(10, 2) NOT NULL,
     payment_method JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'Pending',
+    delivered_credentials JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -100,7 +101,23 @@ CREATE TABLE public.order_items (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Create Admin Settings Table
+-- 9. Create Product Storage / Credentials Inventory Table
+CREATE TABLE public.product_storage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
+    type TEXT NOT NULL DEFAULT 'link', -- 'link' | 'account' | 'key' | 'text'
+    link TEXT,
+    username TEXT,
+    password TEXT,
+    notes TEXT,
+    is_used BOOLEAN DEFAULT FALSE,
+    order_id TEXT,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Create Admin Settings Table
 CREATE TABLE public.admin_settings (
     id INT PRIMARY KEY DEFAULT 1,
     admin_username TEXT NOT NULL DEFAULT 'admin',
@@ -115,8 +132,8 @@ INSERT INTO public.admin_settings (id, admin_username, admin_password_hash)
 VALUES (1, 'admin', 'admin123')
 ON CONFLICT (id) DO NOTHING;
 
--- 10. Enable Row Level Security (RLS) & grant minimum public catalogue access
--- Orders, visitor records, and admin settings are deliberately private. Access
+-- 11. Enable Row Level Security (RLS) & grant minimum public catalogue access
+-- Orders, storage, visitor records, and admin settings are deliberately private. Access
 -- them only from Next.js server routes using SUPABASE_SERVICE_ROLE_KEY.
 ALTER TABLE public.telegram_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
@@ -124,6 +141,7 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_storage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON TABLE public.telegram_users FROM anon, authenticated;
@@ -132,6 +150,7 @@ REVOKE ALL ON TABLE public.products FROM anon, authenticated;
 REVOKE ALL ON TABLE public.payment_methods FROM anon, authenticated;
 REVOKE ALL ON TABLE public.orders FROM anon, authenticated;
 REVOKE ALL ON TABLE public.order_items FROM anon, authenticated;
+REVOKE ALL ON TABLE public.product_storage FROM anon, authenticated;
 REVOKE ALL ON TABLE public.admin_settings FROM anon, authenticated;
 
 GRANT SELECT ON TABLE public.categories TO anon, authenticated;

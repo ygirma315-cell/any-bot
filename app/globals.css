@@ -39,29 +39,23 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Fixed Mobile App Viewport */
+/* Responsive Viewport System */
 .app-viewport {
   position: relative;
   width: 100%;
-  max-width: 480px;
   height: 100vh;
   height: 100dvh;
   margin: 0 auto;
-  background: rgba(250, 250, 252, 0.88);
+  background: rgba(250, 250, 252, 0.96);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 50px rgba(99, 102, 241, 0.1);
   overflow: hidden;
   touch-action: pan-x pan-y;
 }
 
-@media (min-width: 481px) {
+@media (min-width: 1024px) {
   .app-viewport {
-    height: 90vh;
-    max-height: 850px;
-    margin: 20px auto;
-    border-radius: 32px;
-    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #fafafc;
   }
 }
 

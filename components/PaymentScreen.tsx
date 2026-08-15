@@ -47,6 +47,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           const data = await fetchPaymentMethodsFromSupabase();
           if (data && data.length > 0) {
             setMethods(data);
+            if (!selectedMethod && data.length > 0) {
+              setSelectedMethod(data[0]);
+            }
           }
         } else {
           setDbStatus('down');
@@ -63,6 +66,9 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     const handleUpdate = () => {
       const updated = getStoredPaymentMethods();
       setMethods(updated);
+      if (updated.length > 0 && !selectedMethod) {
+        setSelectedMethod(updated[0]);
+      }
     };
 
     window.addEventListener('ai_store_payments_updated', handleUpdate);
@@ -72,19 +78,15 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
     };
   }, []);
 
-
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-
-  // Early return only if order was already submitted
-  if (submittedOrder) {
-    // rendered submitted order confirmation view below
-  }
 
   const handleCopyAccount = (text: string) => {
     triggerHaptic('light');
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handlePaidSubmit = async () => {
@@ -116,7 +118,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       const orderTimestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC';
 
       const payload: OrderPayload = {
-        orderId: '', // the server assigns the real sequential ID (#ORD-001, #ORD-002, ...)
+        orderId: '', // server assigns the real sequential ID
         deliveryEmail: userEmail.trim(),
         telegramUser: updatedTelegramUser,
         items: cart.map((item) => ({
@@ -138,7 +140,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         status: 'Pending'
       };
 
-      // Submit order via backend API (retries if Supabase save fails so it lands in the DB)
       let dbSaved = false;
       let serverOrderId = '';
       for (let attempt = 1; attempt <= 3; attempt++) {
@@ -165,7 +166,6 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         return;
       }
 
-      // Only add to the session view once the order is safely in the database
       payload.orderId = serverOrderId;
       addOrder(payload);
 
@@ -194,24 +194,24 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
 
   if (submittedOrder) {
     return (
-      <div className="px-4 py-8 space-y-6 text-center animate-fadeIn pb-12">
+      <div className="max-w-lg mx-auto px-4 py-12 space-y-6 text-center animate-fadeIn pb-28">
         <div className="w-20 h-20 mx-auto rounded-full bg-emerald-100/80 border-4 border-emerald-200 flex items-center justify-center text-emerald-600 shadow-lg">
           <CheckCircle2 className="w-10 h-10" />
         </div>
 
         <div>
           <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200 mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> Order Submitted & Processing
+            <Sparkles className="w-3.5 h-3.5" /> Order Submitted &amp; Processing
           </div>
           <h2 className="heading-font text-xl font-extrabold text-slate-900">
             Order Submitted!
           </h2>
           <p className="text-xs text-slate-600 max-w-xs mx-auto mt-1 leading-relaxed">
-            Congrats! You can check your <strong className="text-slate-900 font-bold underline">{userEmail}</strong> email. We've sent your subscription. Have a nice time!
+            Congrats! You can check your <strong className="text-slate-900 font-bold underline">{userEmail}</strong> email. We&apos;ve sent your subscription. Have a nice time!
           </p>
         </div>
 
-        <div className="p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 text-left space-y-2 text-xs shadow-xs">
+        <div className="p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 text-left space-y-2.5 text-xs shadow-xs">
           <div className="flex justify-between text-slate-600">
             <span>Order Number:</span>
             <span className="font-mono font-bold text-slate-900">{submittedOrder.orderId}</span>
@@ -232,7 +232,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {onViewStatus && (
             <button
               type="button"
@@ -241,7 +241,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
                 setSubmittedOrder(null);
                 onViewStatus();
               }}
-              className="btn-pill btn-pill-primary py-3 text-xs font-bold shadow-md bg-[#FF6B00] text-white"
+              className="py-3.5 px-4 rounded-xl text-xs font-extrabold shadow-md bg-[#FF6B00] text-white hover:bg-[#E66000] transition active:scale-95"
             >
               Track Order Status
             </button>
@@ -254,7 +254,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               setSubmittedOrder(null);
               onBrowseServices();
             }}
-            className="btn-pill btn-pill-action py-3 text-xs font-bold shadow-md"
+            className="py-3.5 px-4 rounded-xl text-xs font-extrabold shadow-sm bg-slate-100 hover:bg-slate-200 text-slate-800 transition active:scale-95"
           >
             Back to Store
           </button>
@@ -275,11 +275,11 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
   }
 
   return (
-    <div className="px-4 py-4 space-y-4 pb-28">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-5 pb-28 animate-fadeIn">
       <div>
-        <h2 className="heading-font text-lg font-bold text-slate-900">PAYMENT DETAILS</h2>
+        <h2 className="heading-font text-lg sm:text-xl font-bold text-slate-900">PAYMENT DETAILS</h2>
         <p className="text-xs text-slate-500">
-          {cart.length > 0 ? 'Confirm delivery email & choose payment method' : 'Supported payment methods'}
+          {cart.length > 0 ? 'Select your preferred payment method & complete checkout' : 'Supported payment methods overview'}
         </p>
       </div>
 
@@ -287,7 +287,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
       {dbStatus === 'checking' && (
         <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 font-semibold flex items-center gap-2 animate-fadeIn">
           <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
-          <span>Checking payment availability&hellip;</span>
+          <span>Checking payment methods availability&hellip;</span>
         </div>
       )}
       {dbStatus === 'down' && (
@@ -297,22 +297,22 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
             <span>Payment methods are not available</span>
           </p>
           <p className="text-[11.5px] font-semibold text-rose-800 leading-relaxed">
-            The store database is temporarily not working, so orders cannot be placed right now. Please try again later.
+            The store database is temporarily unavailable. Please try again later.
           </p>
         </div>
       )}
 
       {/* Prompt Banner when cart is empty */}
       {cart.length === 0 && (
-        <div className="p-4 bg-indigo-50/90 backdrop-blur-md rounded-2xl border-2 border-indigo-200/80 space-y-3 shadow-xs text-center animate-fadeIn">
+        <div className="p-6 bg-indigo-50/90 backdrop-blur-md rounded-2xl border-2 border-indigo-200/80 space-y-3 shadow-xs text-center animate-fadeIn max-w-lg mx-auto">
           <div className="w-12 h-12 rounded-2xl bg-white border border-indigo-200 shadow-sm flex items-center justify-center text-indigo-600 mx-auto">
             <Wallet className="w-6 h-6" />
           </div>
 
           <div className="space-y-1">
             <h3 className="heading-font text-base font-extrabold text-slate-900">No Product Selected</h3>
-            <p className="text-xs font-semibold text-slate-600 leading-relaxed max-w-xs mx-auto">
-              First you should order or choose a product that you are going to pay for. You can preview our supported payment methods below:
+            <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+              First please choose a product in the store. You can preview our supported payment methods below:
             </p>
           </div>
 
@@ -322,7 +322,7 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
               triggerHaptic('light');
               onBrowseServices();
             }}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mx-auto active:scale-95"
           >
             <ShoppingBag className="w-4 h-4 text-white stroke-[2.5]" />
             <span>Browse Products to Order</span>
@@ -330,203 +330,210 @@ export const PaymentScreen: React.FC<PaymentScreenProps> = ({
         </div>
       )}
 
-      {/* Non-Editable Customer & Delivery Information Card - ONLY SHOWN WHEN PRODUCT IS SELECTED */}
-      {cart.length > 0 && (
-        <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
-              <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer & Delivery Info
-            </span>
-            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
-              <Lock className="w-3 h-3 text-slate-400" /> Read-Only Info
-            </span>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            {/* Telegram Name & Username Fetched */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Name</span>
-                <span className="font-extrabold text-slate-900 truncate block">
-                  {getTelegramUser().user.first_name} {getTelegramUser().user.last_name || ''}
-                </span>
-              </div>
-
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
-                <span className="font-extrabold text-orange-600 truncate block">
-                  @{getTelegramUser().user.username || 'user'}
-                </span>
-              </div>
-            </div>
-
-            {/* Delivery Email Destination */}
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 font-mono text-xs font-bold text-slate-900 flex items-center justify-between">
-              <div className="truncate pr-2">
-                <span className="text-[10px] font-bold text-slate-400 block font-sans uppercase">Delivery Destination</span>
-                <span>{userEmail || 'No email provided'}</span>
-              </div>
-              <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded shrink-0">
-                Credentials Target
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Short Updated Payment Rules Card - ONLY SHOWN WHEN PRODUCT IS SELECTED */}
-      {cart.length > 0 && (
-        <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
-          <p className="font-extrabold text-orange-950 flex items-center gap-1">
-            <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment & Refund Policy:
-          </p>
-          <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
-            <p>• <strong>1 Product = 1 Email:</strong> Each email address can only be used once per product.</p>
-            <p>• <strong>Warranty Products:</strong> Refunds & replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
-            <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Methods List */}
-      <div className="space-y-2.5">
-        {methods.map((method) => {
-          const isSelected = selectedMethod?.id === method.id;
-          return (
-            <div
-              key={method.id}
-              onClick={() => {
-                triggerHaptic('light');
-                setSelectedMethod((prev) => (prev?.id === method.id ? null : method));
-              }}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
-                isSelected
-                  ? 'bg-white/95 backdrop-blur-md border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/10'
-                  : 'bg-white/80 backdrop-blur-md border-slate-200/80 hover:border-slate-300 shadow-xs'
-              }`}
-            >
+      {/* Responsive 2-Column Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Customer Details, Policy & Methods (lg:col-span-7) */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Customer & Delivery Summary Card */}
+          {cart.length > 0 && (
+            <div className="p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative rounded-xl overflow-hidden p-1.5 border border-slate-100 bg-white shadow-xs flex items-center justify-center shrink-0">
-                    <Image
-                      src={method.logoPath}
-                      alt={method.name}
-                      width={36}
-                      height={36}
-                      className="object-contain w-full h-full"
-                    />
+                <span className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Mail className="w-4 h-4 text-[#FF6B00]" /> Customer &amp; Delivery Destination
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200/80 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-slate-400" /> Delivery Target
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Telegram Handle</span>
+                    <span className="font-extrabold text-orange-600 truncate block">
+                      @{getTelegramUser().user.username || 'web_customer'}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="heading-font text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      {method.name}
-                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {method.badge}
-                      </span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500">{method.subtitle}</p>
+
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">Delivery Email</span>
+                    <span className="font-extrabold text-slate-900 truncate block">
+                      {userEmail || 'No email provided'}
+                    </span>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
 
+          {/* Payment & Refund Policy */}
+          {cart.length > 0 && (
+            <div className="p-3.5 bg-orange-50/70 rounded-2xl border border-orange-200/70 text-xs space-y-1.5">
+              <p className="font-extrabold text-orange-950 flex items-center gap-1">
+                <FileText className="w-4 h-4 text-[#FF6B00]" /> Payment &amp; Refund Policy:
+              </p>
+              <div className="space-y-1 text-[11px] text-slate-700 leading-snug">
+                <p>• <strong>Instant Dispatch:</strong> Product credentials will be sent to your email immediately upon verification.</p>
+                <p>• <strong>Warranty Products:</strong> Refunds &amp; replacements are valid <strong>ONLY up to the specified warranty period</strong>.</p>
+                <p>• <strong>Non-Warranty Products:</strong> Strictly <strong>NO REFUNDS</strong> or replacements for non-warranty items.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Methods Selector Cards */}
+          <div className="space-y-2.5">
+            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+              Select Payment Method:
+            </h3>
+            {methods.map((method) => {
+              const isSelected = selectedMethod?.id === method.id;
+              return (
                 <div
-                  className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                    isSelected ? 'border-[#FF6B00] bg-[#FF6B00] text-white' : 'border-slate-300'
+                  key={method.id}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setSelectedMethod(method);
+                  }}
+                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-white/95 backdrop-blur-md border-[#FF6B00] shadow-md ring-2 ring-[#FF6B00]/10'
+                      : 'bg-white/80 backdrop-blur-md border-slate-200/80 hover:border-slate-300 shadow-xs'
                   }`}
                 >
-                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 relative rounded-xl overflow-hidden p-1.5 border border-slate-100 bg-white shadow-xs flex items-center justify-center shrink-0">
+                        <Image
+                          src={method.logoPath}
+                          alt={method.name}
+                          width={36}
+                          height={36}
+                          className="object-contain w-full h-full"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="heading-font text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          {method.name}
+                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {method.badge}
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">{method.subtitle}</p>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                        isSelected ? 'border-[#FF6B00] bg-[#FF6B00] text-white' : 'border-slate-300'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Sticky Transfer Details & Submit CTA (lg:col-span-5) */}
+        <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
+          {selectedMethod && (
+            <div className="p-5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <span className="text-xs font-extrabold text-slate-900 uppercase">Transfer Summary</span>
+                <span className="text-xs font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+                  {selectedMethod.name}
+                </span>
               </div>
 
-              {isSelected && (
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-3 animate-fadeIn">
-                  {cart.length > 0 ? (
-                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60">
-                      <span className="text-xs font-medium text-slate-600">Amount to Transfer:</span>
-                      <span className="heading-font text-base font-extrabold text-[#FF6B00]">
-                        ${totalAmount.toFixed(2)} USD
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between p-2.5 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs font-semibold text-indigo-900">
-                      <span>Order Status:</span>
-                      <span className="text-indigo-600 font-extrabold">No product selected</span>
-                    </div>
-                  )}
+              {cart.length > 0 ? (
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                  <span className="text-xs font-medium text-slate-600">Total Due:</span>
+                  <span className="heading-font text-xl font-extrabold text-[#FF6B00]">
+                    ${totalAmount.toFixed(2)} USD
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs font-semibold text-indigo-900">
+                  <span>Order Status:</span>
+                  <span className="text-indigo-600 font-extrabold">No product selected</span>
+                </div>
+              )}
 
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight block mb-1">
-                      Send Payment To ({method.accountName}):
-                    </label>
-                    <div className="flex items-center justify-between p-2.5 bg-slate-900 text-white rounded-xl font-mono text-xs shadow-xs">
-                      <span className="truncate pr-2">{method.accountId}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyAccount(method.accountId);
-                        }}
-                        className="btn-pill text-[10px] py-1 px-2.5 bg-white/10 hover:bg-white/20 text-white border-white/20 shrink-0"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-400" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 bg-orange-50/50 p-3 rounded-xl border border-orange-100">
-                    <p className="text-[11px] font-bold text-orange-950 mb-1">Payment Instructions:</p>
-                    {method.instructions.map((step, idx) => (
-                      <p key={idx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
-                        <span className="font-bold text-[#FF6B00]">{idx + 1}.</span>
-                        <span>{step}</span>
-                      </p>
-                    ))}
-                  </div>
-
-                  {/* Submit Payment CTA Button */}
+              <div>
+                <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight block mb-1">
+                  Send Payment To ({selectedMethod.accountName}):
+                </label>
+                <div className="flex items-center justify-between p-3 bg-slate-900 text-white rounded-xl font-mono text-xs shadow-xs">
+                  <span className="truncate pr-2">{selectedMethod.accountId}</span>
                   <button
                     type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      if (cart.length === 0) {
-                        triggerHaptic('light');
-                        onBrowseServices();
-                      } else {
-                        handlePaidSubmit();
-                      }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyAccount(selectedMethod.accountId);
                     }}
-                    className="btn-pill btn-pill-primary w-full py-4 text-xs font-extrabold shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95"
+                    className="py-1 px-3 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold rounded-lg border border-white/20 transition shrink-0 flex items-center gap-1"
                   >
-                    {isSubmitting ? (
+                    {copied ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span>Submitting Payment...</span>
-                      </>
-                    ) : cart.length === 0 ? (
-                      <>
-                        <ShoppingBag className="w-4 h-4 text-white" />
-                        <span>Choose a Product to Order</span>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Copied</span>
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4 text-white" />
-                        <span>Submit Payment (I've Paid)</span>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy</span>
                       </>
                     )}
                   </button>
                 </div>
-              )}
+              </div>
+
+              <div className="space-y-1 bg-orange-50/50 p-3.5 rounded-xl border border-orange-100">
+                <p className="text-[11px] font-bold text-orange-950 mb-1">Payment Instructions:</p>
+                {selectedMethod.instructions.map((step, idx) => (
+                  <p key={idx} className="text-[11px] text-slate-600 flex items-start gap-1.5">
+                    <span className="font-bold text-[#FF6B00]">{idx + 1}.</span>
+                    <span>{step}</span>
+                  </p>
+                ))}
+              </div>
+
+              {/* Submit Payment CTA Button */}
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (cart.length === 0) {
+                    triggerHaptic('light');
+                    onBrowseServices();
+                  } else {
+                    handlePaidSubmit();
+                  }
+                }}
+                className="w-full py-4 text-xs font-extrabold rounded-2xl shadow-md hover:shadow-lg flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#E66000] text-white transition-all transform active:scale-95 disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Submitting Order to Server...</span>
+                  </>
+                ) : cart.length === 0 ? (
+                  <>
+                    <ShoppingBag className="w-4 h-4 text-white" />
+                    <span>Choose a Product to Order</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 text-white" />
+                    <span>Submit Payment (I&apos;ve Paid)</span>
+                  </>
+                )}
+              </button>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
     </div>
   );

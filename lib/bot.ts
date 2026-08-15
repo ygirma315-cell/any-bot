@@ -24,6 +24,15 @@ export interface OrderPayload {
   };
   timestamp: string;
   status: 'Pending' | 'Payment Submitted' | 'Payment Confirmed' | 'Processing' | 'Completed' | 'Cancelled' | 'Accepted' | 'Rejected';
+  deliveredCredentials?: Array<{
+    product_id?: string;
+    product_name?: string;
+    type?: string;
+    link?: string;
+    username?: string;
+    password?: string;
+    notes?: string;
+  }>;
 }
 
 export async function sendTelegramAdminNotification(payload: OrderPayload): Promise<{ success: boolean; message: string }> {
@@ -121,7 +130,19 @@ export async function sendTelegramOrderStatusUpdate(
   status: string,
   customer: { telegramId?: number; first_name?: string; username?: string } | null,
   deliveryEmail?: string,
-  extraDetails?: { items?: { name: string; quantity: number }[]; total?: number }
+  extraDetails?: { 
+    items?: { name: string; quantity: number }[]; 
+    total?: number;
+    credentials?: {
+      productName: string;
+      type?: 'link' | 'account' | 'key' | 'text';
+      link?: string;
+      username?: string;
+      password?: string;
+      notes?: string;
+      warranty?: string;
+    }[];
+  }
 ): Promise<{ success: boolean; message: string }> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -139,8 +160,8 @@ export async function sendTelegramOrderStatusUpdate(
 
   if (isAccepted) {
     statusEmoji = '✅';
-    headline = 'ORDER ACCEPTED — AnyAi Store';
-    customerStatusText = 'Your payment has been verified and your product credentials / subscription access have been released to your delivery email. Enjoy!';
+    headline = 'ORDER ACCEPTED & ACCESS DELIVERED — AnyAi Store';
+    customerStatusText = 'Your payment has been verified! Below are your digital access credentials / links:';
   } else if (isRejected) {
     statusEmoji = '❌';
     headline = 'ORDER REJECTED — AnyAi Store';
@@ -149,6 +170,27 @@ export async function sendTelegramOrderStatusUpdate(
     statusEmoji = '🟡';
     headline = 'ORDER STATUS UPDATE — AnyAi Store';
     customerStatusText = `Your order status has been updated to ${status}.`;
+  }
+
+  // Format digital credentials if available
+  let credentialsFormatted = '';
+  if (extraDetails?.credentials && extraDetails.credentials.length > 0) {
+    credentialsFormatted = '\n\n🔑 <b>YOUR DIGITAL PRODUCT ACCESS:</b>\n' + extraDetails.credentials.map((cred, idx) => {
+      let block = `\n📦 <b>${idx + 1}. ${escapeHtml(cred.productName)}</b>`;
+      if (cred.link) {
+        block += `\n🔗 <b>Access Link:</b> ${escapeHtml(cred.link)}`;
+      }
+      if (cred.username) {
+        block += `\n👤 <b>Username/Email:</b> <code>${escapeHtml(cred.username)}</code>`;
+      }
+      if (cred.password) {
+        block += `\n🔒 <b>Password:</b> <code>${escapeHtml(cred.password)}</code>`;
+      }
+      if (cred.notes) {
+        block += `\n📝 <b>Notes:</b> <i>${escapeHtml(cred.notes)}</i>`;
+      }
+      return block;
+    }).join('\n');
   }
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -166,7 +208,9 @@ Hey ${escapeHtml(customerName)}!
 <b>Delivery Target:</b> <code>${escapeHtml(deliveryEmail || 'Your Email')}</code>
 <b>Status:</b> ${statusEmoji} <b>${escapeHtml(status)}</b>
 
-${customerStatusText}
+${customerStatusText}${credentialsFormatted}
+
+💬 <i>Need help? Contact support: @exo80</i>
 `;
 
     try {
@@ -190,8 +234,6 @@ ${customerStatusText}
 
   // 2. Also send Status Change notification to Admin Chat (if configured)
   if (adminChatId) {
-    // If the customer is the admin themselves and already received the customer DM above,
-    // skip sending duplicate message to the same chat
     const isSameAsCustomer = validCustomerTgId && String(validCustomerTgId) === String(adminChatId);
     if (!isSameAsCustomer) {
       const customerDisplay = customer?.username
@@ -200,7 +242,7 @@ ${customerStatusText}
         ? `${customer.first_name}${validCustomerTgId ? ` (${validCustomerTgId})` : ''}`
         : validCustomerTgId
         ? `ID: ${validCustomerTgId}`
-        : 'Web Guest';
+        : 'Direct Web Visitor';
 
       const adminTextMessage = `
 🔔 <b>ORDER STATUS UPDATED</b>
@@ -209,7 +251,7 @@ ${customerStatusText}
 <b>New Status:</b> ${statusEmoji} <b>${escapeHtml(status)}</b>
 <b>Customer:</b> ${escapeHtml(customerDisplay)}
 <b>Delivery Email:</b> <code>${escapeHtml(deliveryEmail || 'Not Provided')}</code>
-${extraDetails?.total ? `<b>Total:</b> $${extraDetails.total.toFixed(2)}\n` : ''}
+${extraDetails?.total ? `<b>Total:</b> $${extraDetails.total.toFixed(2)}\n` : ''}${credentialsFormatted ? `<b>Credentials Dispatched:</b> Yes (${extraDetails?.credentials?.length || 0} items)\n` : ''}
 <i>Updated from Admin Dashboard at ${new Date().toLocaleTimeString()}</i>
 `;
 

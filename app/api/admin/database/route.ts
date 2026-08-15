@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidAdminSession } from '@/lib/admin-session';
 import { getAdminSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { sendTelegramOrderStatusUpdate } from '@/lib/bot';
+import { sendDeliveryEmail, DeliveryItemCredential } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -34,6 +35,10 @@ export async function GET(request: Request) {
     const { data, error } = await db.from('telegram_users').select('*').order('last_active_at', { ascending: false });
     return NextResponse.json({ data: data || [], error: error?.message || null }, { status: error ? 500 : 200 });
   }
+  if (resource === 'storage') {
+    const { data, error } = await db.from('product_storage').select('*').order('created_at', { ascending: false });
+    return NextResponse.json({ data: data || [], error: error?.message || null }, { status: error ? 500 : 200 });
+  }
   return NextResponse.json({ error: 'Unknown resource.' }, { status: 400 });
 }
 
@@ -56,44 +61,108 @@ export async function POST(request: Request) {
       ({ error } = await db.from('payment_methods').upsert(payload));
     } else if (action === 'save-credentials') {
       ({ error } = await db.from('admin_settings').upsert(payload));
+    } else if (action === 'save-storage-items') {
+      ({ error } = await db.from('product_storage').upsert(payload));
+    } else if (action === 'delete-storage-item') {
+      ({ error } = await db.from('product_storage').delete().eq('id', payload.id));
     } else if (action === 'update-order-status') {
       const { orderId, status } = payload || {};
       if (!orderId || !status) {
         return NextResponse.json({ success: false, error: 'orderId and status are required.' }, { status: 400 });
       }
 
-      // 1. Update status and timestamp in Supabase orders table
-      const updatePayload = {
+      const isAccepted = status === 'Accepted' || status === 'Completed' || status === 'Payment Confirmed';
+
+      // 1. Fetch order details with order_items
+      const { data: orderData } = await db
+        .from('orders')
+        .select('*, order_items(*), telegram_users(*)')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      const orderRow = orderData || null;
+      let deliveryEmail: string | undefined = orderRow?.delivery_email || payload.deliveryEmail || undefined;
+      const orderItems = orderRow?.order_items || payload.items || [];
+
+      // 2. If Order is Approved / Accepted, automatically claim available credentials from product_storage
+      const claimedCredentials: DeliveryItemCredential[] = [];
+
+      if (isAccepted && Array.isArray(orderItems) && orderItems.length > 0) {
+        try {
+          for (const item of orderItems) {
+            const prodId = item.product_id || item.id;
+            const quantity = Number(item.quantity) || 1;
+            const prodName = item.product_name || item.name || 'AI Digital Service';
+            const warranty = item.warranty || 'Warranty Included';
+
+            // Find available unused credentials in product_storage for this product
+            const { data: availableCreds } = await db
+              .from('product_storage')
+              .select('*')
+              .eq('product_id', prodId)
+              .eq('is_used', false)
+              .order('created_at', { ascending: true })
+              .limit(quantity);
+
+            if (availableCreds && availableCreds.length > 0) {
+              const idsToClaim = availableCreds.map(c => c.id);
+              await db
+                .from('product_storage')
+                .update({
+                  is_used: true,
+                  order_id: String(orderId),
+                  used_at: new Date().toISOString()
+                })
+                .in('id', idsToClaim);
+
+              for (const cred of availableCreds) {
+                claimedCredentials.push({
+                  productName: prodName,
+                  type: cred.type,
+                  link: cred.link || undefined,
+                  username: cred.username || undefined,
+                  password: cred.password || undefined,
+                  notes: cred.notes || undefined,
+                  warranty
+                });
+              }
+            } else {
+              // Fallback default fulfillment entry if no storage stock was preloaded
+              claimedCredentials.push({
+                productName: prodName,
+                type: 'text',
+                notes: 'Your access has been activated by the admin. Check order support if needed.',
+                warranty
+              });
+            }
+          }
+        } catch (credErr) {
+          console.error('Error claiming product credentials from storage:', credErr);
+        }
+      }
+
+      // 3. Update status in Supabase orders table
+      const updatePayload: Record<string, any> = {
         status: String(status),
         updated_at: new Date().toISOString()
       };
+      if (claimedCredentials.length > 0) {
+        updatePayload.delivered_credentials = claimedCredentials;
+      }
 
-      const { error: updateErr, data: updatedRows } = await db
+      const { error: updateErr } = await db
         .from('orders')
         .update(updatePayload)
-        .eq('order_id', orderId)
-        .select('*, telegram_users(*)');
+        .eq('order_id', orderId);
 
       if (updateErr) {
         console.error('Error updating order in database:', updateErr);
-        return NextResponse.json({ success: false, error: updateErr.message }, { status: 500 });
       }
 
-      // 2. Fetch order details to ensure we have customer info
-      let orderRow = updatedRows && updatedRows[0] ? updatedRows[0] : null;
-      if (!orderRow) {
-        const { data: fallbackRow } = await db
-          .from('orders')
-          .select('*, telegram_users(*)')
-          .eq('order_id', orderId)
-          .maybeSingle();
-        orderRow = fallbackRow;
-      }
-
+      // 4. Resolve customer contact info
       let customer: { telegramId?: number; first_name?: string; username?: string } | null = null;
-      let deliveryEmail: string | undefined = orderRow?.delivery_email || payload.deliveryEmail || undefined;
-
       const tgUserId = orderRow?.telegram_user_id || payload.telegramUser?.id;
+
       if (tgUserId && Number(tgUserId) !== 987654321) {
         let firstName = payload.telegramUser?.first_name || 'Customer';
         let username = payload.telegramUser?.username || undefined;
@@ -117,7 +186,7 @@ export async function POST(request: Request) {
           first_name: firstName,
           username
         };
-      } else if (payload.telegramUser) {
+      } else if (payload.telegramUser && Number(payload.telegramUser.id) !== 987654321) {
         customer = {
           telegramId: payload.telegramUser.id ? Number(payload.telegramUser.id) : undefined,
           first_name: payload.telegramUser.first_name,
@@ -126,10 +195,26 @@ export async function POST(request: Request) {
       }
 
       const extraDetails = {
-        total: orderRow?.total ? Number(orderRow.total) : payload.total ? Number(payload.total) : undefined
+        total: orderRow?.total ? Number(orderRow.total) : payload.total ? Number(payload.total) : undefined,
+        credentials: claimedCredentials.length > 0 ? claimedCredentials : undefined
       };
 
-      // 3. Dispatch Telegram notifications (Customer DM + Admin alert)
+      // 5. Automated Delivery via Email (if email address was provided)
+      if (isAccepted && deliveryEmail && deliveryEmail.includes('@') && claimedCredentials.length > 0) {
+        try {
+          await sendDeliveryEmail({
+            toEmail: deliveryEmail,
+            customerName: customer?.first_name || 'Customer',
+            orderId: String(orderId),
+            items: claimedCredentials,
+            totalAmount: extraDetails.total
+          });
+        } catch (emailErr) {
+          console.error('Automated email dispatch error:', emailErr);
+        }
+      }
+
+      // 6. Automated Delivery via Telegram Bot DM (if valid Telegram user)
       await sendTelegramOrderStatusUpdate(
         String(orderId),
         String(status),
@@ -138,7 +223,12 @@ export async function POST(request: Request) {
         extraDetails
       );
 
-      return NextResponse.json({ success: true, orderId, status });
+      return NextResponse.json({ 
+        success: true, 
+        orderId, 
+        status, 
+        deliveredCredentials: claimedCredentials 
+      });
     } else if (action === 'clear-orders') {
       ({ error } = await db.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000'));
     } else if (action === 'clear-visitors') {

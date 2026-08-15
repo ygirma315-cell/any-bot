@@ -14,18 +14,19 @@ import { AdminOrdersView } from './AdminOrdersView';
 import { AdminCategoriesView } from './AdminCategoriesView';
 import { AdminUsersView } from './AdminUsersView';
 import { AdminSettingsView } from './AdminSettingsView';
+import { AdminStorageView } from './AdminStorageView';
 import { 
   Package, ShoppingBag, LogOut, Plus, Edit, Trash2, ShieldCheck, ShieldAlert, 
   Tag, ExternalLink, Sparkles, FolderPlus, Layers, Bell, UserCheck, 
   ArrowUpRight, Edit2, X, Users, Settings, Grid, Home, Store, Activity, Menu,
-  RefreshCw, Check, ArrowUp, ArrowDown
+  RefreshCw, Check, ArrowUp, ArrowDown, Database
 } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'dashboard' | 'orders' | 'products' | 'categories' | 'users' | 'settings';
+type TabType = 'dashboard' | 'orders' | 'products' | 'storage' | 'categories' | 'users' | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -75,8 +76,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [headerToast, setHeaderToast] = useState<string | null>(null);
 
-  const refreshData = () => {
-    setIsRefreshing(true);
+  const refreshData = (isManual = false) => {
+    if (isManual) setIsRefreshing(true);
     const prods = getStoredProducts();
     const cats = getStoredCategories();
     const ords = getStoredOrders();
@@ -91,8 +92,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setOnline24hCount(onlineCount);
 
     Promise.all([
-      fetchProductsFromSupabase().then(p => { if (p && p.length > 0) setProducts(p); }),
-      fetchCategoriesFromSupabase().then(c => { if (c && c.length > 0) setCategories(c); }),
+      fetchProductsFromSupabase().then(p => { 
+        if (p && p.length > 0) {
+          setProducts(prev => JSON.stringify(prev) === JSON.stringify(p) ? prev : p);
+        }
+      }),
+      fetchCategoriesFromSupabase().then(c => { 
+        if (c && c.length > 0) {
+          setCategories(prev => JSON.stringify(prev) === JSON.stringify(c) ? prev : c);
+        }
+      }),
       fetchOrdersFromSupabase().then(o => {
         if (o) {
           setOrdersCount(o.length);
@@ -100,45 +109,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         }
       }),
       fetchVisitorsFromSupabase().then(v => {
-        if (v) {
-          setVisitors(v);
+        if (v && v.length > 0) {
+          setVisitors(prev => JSON.stringify(prev) === JSON.stringify(v) ? prev : v);
           setVisitorsCount(v.length);
           setOnline24hCount(v.filter(item => new Date(item.lastActive) >= new Date(Date.now() - 24 * 60 * 60 * 1000)).length);
         }
       })
     ]).finally(() => {
-      setTimeout(() => setIsRefreshing(false), 500);
+      if (isManual) {
+        setTimeout(() => setIsRefreshing(false), 500);
+      }
     });
   };
 
   const handleManualRefresh = () => {
-    refreshData();
+    refreshData(true);
     setHeaderToast('⚡ Store data refreshed from Supabase DB!');
     setTimeout(() => setHeaderToast(null), 3500);
   };
 
 
   useEffect(() => {
-    refreshData();
-    const handleProductsUpdate = () => refreshData();
-    const handleOrdersUpdate = () => refreshData();
-    const handleVisitorsUpdate = () => refreshData();
+    refreshData(false);
+    const handleProductsUpdate = () => refreshData(false);
+    const handleOrdersUpdate = () => refreshData(false);
+    const handleVisitorsUpdate = () => refreshData(false);
 
     window.addEventListener('ai_store_products_updated', handleProductsUpdate);
     window.addEventListener('ai_store_categories_updated', handleOrdersUpdate);
     window.addEventListener('ai_store_orders_updated', handleOrdersUpdate);
     window.addEventListener('ai_store_visitors_updated', handleVisitorsUpdate);
 
-    // Live poll visitor activity from the database so active/online counts stay fresh.
+    // Calm 30-second live poll for visitor activity so active counts stay updated without flickering
     const visitorInterval = setInterval(() => {
       fetchVisitorsFromSupabase().then(v => {
-        if (v) {
-          setVisitors(v);
+        if (v && v.length > 0) {
+          setVisitors(prev => {
+            if (JSON.stringify(prev) === JSON.stringify(v)) return prev;
+            return v;
+          });
           setVisitorsCount(v.length);
           setOnline24hCount(v.filter(item => new Date(item.lastActive) >= new Date(Date.now() - 24 * 60 * 60 * 1000)).length);
         }
       });
-    }, 5000);
+    }, 30000);
 
     return () => {
       window.removeEventListener('ai_store_products_updated', handleProductsUpdate);
@@ -327,7 +341,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <span>Products</span>
             </button>
 
-            {/* 4. Categories */}
+            {/* 4. Storage & Credential Inventory */}
+            <button
+              type="button"
+              onClick={() => handleTabChange('storage')}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all ${
+                activeTab === 'storage'
+                  ? 'bg-[#FF6B00] text-white shadow-md'
+                  : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Database className="w-4 h-4 shrink-0" />
+                <span>Storage</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-400/20 text-[10px] font-black">
+                Stock
+              </span>
+            </button>
+
+            {/* 5. Categories */}
             <button
               type="button"
               onClick={() => handleTabChange('categories')}
@@ -564,7 +597,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               {/* Quick Actions Panel */}
               <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(15,23,42,0.04)] space-y-4">
                 <h3 className="text-sm font-extrabold text-slate-900">Quick Operations</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -574,7 +607,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     className="p-4 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-[#FF6B00] font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>+ Add New Product</span>
+                    <span>+ Add Product</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('storage')}
+                    className="p-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>Product Storage</span>
                   </button>
 
                   <button
@@ -583,13 +625,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     className="p-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
                   >
                     <Grid className="w-4 h-4" />
-                    <span>Manage Categories</span>
+                    <span>Categories</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab('orders')}
-                    className="p-4 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
+                    className="p-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2 transition-all"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     <span>View Orders</span>
@@ -769,7 +811,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </div>
           )}
 
-          {/* ==================== 4. CATEGORIES PAGE ==================== */}
+          {/* ==================== 4. STORAGE & CREDENTIAL INVENTORY PAGE ==================== */}
+          {activeTab === 'storage' && (
+            <AdminStorageView
+              products={products}
+              onRefreshProducts={refreshData}
+            />
+          )}
+
+          {/* ==================== 5. CATEGORIES PAGE ==================== */}
           {activeTab === 'categories' && (
             <AdminCategoriesView
               categories={categories}

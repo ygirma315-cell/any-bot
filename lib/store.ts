@@ -261,7 +261,8 @@ export function mapOrdersFromDb(rows: any[]): OrderPayload[] {
         accountId: '1000'
       },
       timestamp: new Date(o.created_at).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC',
-      status: o.status || 'Pending'
+      status: o.status || 'Pending',
+      deliveredCredentials: Array.isArray(o.delivered_credentials) ? o.delivered_credentials : []
     };
   });
 }
@@ -308,6 +309,113 @@ export function addOrder(order: OrderPayload): void {
   }
 }
 
+// --- STORAGE / DIGITAL CREDENTIALS INVENTORY ---
+export interface ProductStorageItem {
+  id: string;
+  product_id: string;
+  type: 'link' | 'account' | 'key' | 'text';
+  link?: string;
+  username?: string;
+  password?: string;
+  notes?: string;
+  is_used: boolean;
+  order_id?: string;
+  used_at?: string;
+  created_at?: string;
+}
+
+let sessionStorageItems: ProductStorageItem[] = [];
+
+export function getStoredStorage(): ProductStorageItem[] {
+  return sessionStorageItems;
+}
+
+export function saveStoredStorage(items: ProductStorageItem[], syncRemote = true): void {
+  sessionStorageItems = [...items];
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_storage_updated'));
+  }
+  if (syncRemote) {
+    const payload = items.map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      type: item.type,
+      link: item.link || null,
+      username: item.username || null,
+      password: item.password || null,
+      notes: item.notes || null,
+      is_used: item.is_used,
+      order_id: item.order_id || null,
+      used_at: item.used_at || null
+    }));
+    syncAdminDatabase('save-storage-items', payload);
+  }
+}
+
+export async function fetchStorageFromSupabase(): Promise<ProductStorageItem[]> {
+  if (!isSupabaseConfigured) return getStoredStorage();
+  try {
+    const headers = getAdminAuthHeaders();
+    const response = await fetch('/api/admin/database?resource=storage', {
+      headers,
+      credentials: 'include'
+    });
+    if (!response.ok) return getStoredStorage();
+    const { data } = await response.json();
+    if (!data) return [];
+    const mapped: ProductStorageItem[] = data.map((item: any) => ({
+      id: item.id,
+      product_id: item.product_id,
+      type: item.type || 'link',
+      link: item.link || undefined,
+      username: item.username || undefined,
+      password: item.password || undefined,
+      notes: item.notes || undefined,
+      is_used: Boolean(item.is_used),
+      order_id: item.order_id || undefined,
+      used_at: item.used_at || undefined,
+      created_at: item.created_at || undefined
+    }));
+    sessionStorageItems = mapped;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ai_store_storage_updated'));
+    }
+    return mapped;
+  } catch (err) {
+    console.error('Error fetching storage from Supabase:', err);
+    return getStoredStorage();
+  }
+}
+
+export async function addStorageItems(newItems: Omit<ProductStorageItem, 'id' | 'is_used' | 'created_at'>[]): Promise<{ success: boolean; error?: string }> {
+  const current = getStoredStorage();
+  const prepared: ProductStorageItem[] = newItems.map(item => ({
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `stor_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+    product_id: item.product_id,
+    type: item.type,
+    link: item.link,
+    username: item.username,
+    password: item.password,
+    notes: item.notes,
+    is_used: false,
+    created_at: new Date().toISOString()
+  }));
+
+  const updated = [...prepared, ...current];
+  saveStoredStorage(updated, true);
+  return { success: true };
+}
+
+export async function deleteStorageItem(id: string): Promise<{ success: boolean; error?: string }> {
+  const current = getStoredStorage();
+  const filtered = current.filter(item => item.id !== id);
+  sessionStorageItems = filtered;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('ai_store_storage_updated'));
+  }
+  return syncAdminDatabase('delete-storage-item', { id });
+}
+
 // --- VISITORS ---
 export interface VisitorRecord {
   telegramId: number;
@@ -316,13 +424,18 @@ export interface VisitorRecord {
   last_name?: string;
   lastActive: string;
   hasOrdered: boolean;
+  email?: string;
+  isWebVisitor?: boolean;
 }
 
 export function getStoredVisitors(): VisitorRecord[] {
   return sessionVisitors;
 }
 
-export function recordVisitor(user: { id: number; username?: string; first_name: string; last_name?: string }, hasOrdered = false): void {
+export function recordVisitor(
+  user: { id: number; username?: string; first_name: string; last_name?: string; isWebVisitor?: boolean; email?: string }, 
+  hasOrdered = false
+): void {
   if (typeof window === 'undefined') return;
   const visitors = getStoredVisitors();
   const existingIndex = visitors.findIndex(v => v.telegramId === user.id);
@@ -337,7 +450,9 @@ export function recordVisitor(user: { id: number; username?: string; first_name:
       first_name: user.first_name || updated[existingIndex].first_name,
       last_name: user.last_name || updated[existingIndex].last_name,
       lastActive: now,
-      hasOrdered: hasOrdered || updated[existingIndex].hasOrdered
+      hasOrdered: hasOrdered || updated[existingIndex].hasOrdered,
+      email: user.email || updated[existingIndex].email,
+      isWebVisitor: user.isWebVisitor ?? updated[existingIndex].isWebVisitor
     };
   } else {
     updated = [
@@ -347,7 +462,9 @@ export function recordVisitor(user: { id: number; username?: string; first_name:
         first_name: user.first_name,
         last_name: user.last_name,
         lastActive: now,
-        hasOrdered
+        hasOrdered,
+        email: user.email,
+        isWebVisitor: user.isWebVisitor
       },
       ...visitors
     ];
@@ -358,7 +475,7 @@ export function recordVisitor(user: { id: number; username?: string; first_name:
   void fetch('/api/visitors', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user, hasOrdered })
+    body: JSON.stringify({ user, hasOrdered, isWebVisitor: user.isWebVisitor, email: user.email })
   }).catch(err => console.error('Visitor sync error:', err));
 }
 
@@ -377,14 +494,19 @@ export async function fetchVisitorsFromSupabase(): Promise<VisitorRecord[]> {
     if (!data || data.length === 0) {
       return [];
     }
-    const mapped: VisitorRecord[] = data.map((v: any) => ({
-      telegramId: Number(v.telegram_id),
-      username: v.username || undefined,
-      first_name: v.first_name || 'Customer',
-      last_name: v.last_name || undefined,
-      lastActive: v.last_active_at || new Date().toISOString(),
-      hasOrdered: Boolean(v.has_ordered)
-    }));
+    const mapped: VisitorRecord[] = data.map((v: any) => {
+      const idNum = Number(v.telegram_id);
+      const isWeb = idNum >= 8000000000 || idNum === 987654321 || !v.username;
+      return {
+        telegramId: idNum,
+        username: v.username || undefined,
+        first_name: v.first_name || (isWeb ? 'Website Visitor' : 'Customer'),
+        last_name: v.last_name || undefined,
+        lastActive: v.last_active_at || new Date().toISOString(),
+        hasOrdered: Boolean(v.has_ordered),
+        isWebVisitor: isWeb
+      };
+    });
     sessionVisitors = mapped;
     window.dispatchEvent(new Event('ai_store_visitors_updated'));
     return mapped;
